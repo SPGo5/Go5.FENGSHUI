@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000073">
+<title>🏘️ Fengshui Portal · SPGo</title>
+<meta property="og:title" content="🏘️ Fengshui Portal · SPGo">
+<meta property="og:description" content="飛星 Flying Star Charts, House Facing Ruler, and Fengshui sites.">
+<meta property="og:image" content="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Grey+Qo&family=Aleo:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<!-- spgo-core.css inlined for self-contained rendering -->
+<style>
+
+/* Global touch feedback — every button gets a press feel */
+button:active, a.card:active, [onclick]:active {
+  opacity: 0.75 !important;
+  transform: scale(0.96) !important;
+  transition: opacity 0.08s, transform 0.08s !important;
+}
+
+/* Profile pic top-right */
+#profile-corner {
+  position: fixed;
+  top: 12px;
+  right: 14px;
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#profile-corner img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(0,191,255,0.5);
+  box-shadow: 0 0 10px rgba(0,191,255,0.3);
+}
+#profile-corner img.flower-pic {
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  object-fit: contain;
+  box-shadow: none;
+  filter: drop-shadow(0 0 6px rgba(0,191,255,0.7)) drop-shadow(0 0 14px rgba(0,191,255,0.4));
+  width: 42px;
+  height: 42px;
+}
+#profile-corner-code {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(0,191,255,0.7);
+  margin-top: 3px;
+  max-width: 50px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Logout popup */
+#logout-popup {
+  position: fixed;
+  top: 60px;
+  right: 10px;
+  z-index: 9999;
+  background: rgba(0,0,60,0.97);
+  border: 1px solid rgba(0,191,255,0.35);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  min-width: 160px;
+}
+#logout-popup button {
+  background: none;
+  border: 1px solid rgba(255,80,80,0.5);
+  color: rgba(255,150,150,0.9);
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+#logout-popup button:active { opacity: 0.7; }
+
+/* ============================================================
+   RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --navy: #000073;
+  --navy-dark: #00004a;
+  --sky: #00BFFF;
+  --white: #ffffff;
+  --dim: rgba(255,255,255,0.12);
+  --dim2: rgba(255,255,255,0.06);
+  --border: rgba(0,191,255,0.25);
+  --border-dim: rgba(255,255,255,0.08);
+  --text: #ffffff;
+  --text-mid: rgba(255,255,255,0.5);
+  --text-dim: rgba(255,255,255,0.35);
+  --red: #ff0000;
+  --green: #00cc44;
+  --gold: #FFD700;
+  --pink: #F3ABB6;
+  --purple: #E0B0FF;
+  --grey-text: #D0D2CF;
+}
+
+html, body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: var(--navy);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  font-size: 16px;
+}
+
+/* ============================================================
+   SCREEN SYSTEM
+   ============================================================ */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  padding: 0 20px 60px;
+  background: radial-gradient(ellipse at 50% 20%, rgba(0,191,255,0.12) 0%, transparent 65%),
+              linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
+  animation: fadeIn 0.35s ease;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes verifyPulse {
+  0%,100% { opacity:0.7; transform:scale(1); filter:drop-shadow(0 0 14px rgba(0,191,255,0.5)); }
+  50%      { opacity:1;   transform:scale(1.08); filter:drop-shadow(0 0 28px rgba(0,191,255,0.9)); }
+}
+@keyframes verifyDots {
+  0%  { content:'Verifying'; }
+  25% { content:'Verifying.'; }
+  50% { content:'Verifying..'; }
+  75% { content:'Verifying...'; }
+}
+#verify-text::after {
+  content:'';
+  animation: dotsAnim 1.2s steps(4,end) infinite;
+}
+@keyframes dotsAnim {
+  0%  { content:''; }
+  25% { content:'.'; }
+  50% { content:'..'; }
+  75% { content:'...'; }
+}
+
+/* ============================================================
+   SHARED COMPONENTS
+   ============================================================ */
+.site-label {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.4);
+  margin: 32px 0 20px;
+  text-align: center;
+}
+
+.logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.logo-wrap img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 0 18px rgba(0,191,255,0.5));
+}
+.logo-title {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  letter-spacing: 0.2em;
+  color: var(--sky);
+  font-weight: 600;
+}
+.logo-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.4);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.screen-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+/* CARDS */
+.cards {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s, transform 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+  text-decoration: none;
+  color: inherit;
+}
+.card:active { transform: scale(0.97); background: rgba(0,191,255,0.12); border-color: var(--sky); }
+.card.grayed { opacity: 0.35; pointer-events: none; }
+.card.external { cursor: pointer; }
+
+.card-icon {
+  width: 48px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.card-icon img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+.card-text { flex: 1; }
+.card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--sky);
+  margin-bottom: 3px;
+}
+.card-desc { font-size: 13px; color: rgba(255,255,255,0.5); }
+.card-desc2 { font-size: 12px; color: var(--sky); margin-top: 4px; opacity: 0.7; }
+.card-arrow { color: var(--sky); font-size: 20px; flex-shrink: 0; }
+
+/* INNER SCREEN HEADER */
+.inner-header {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 20px 0 16px;
+  margin-bottom: 24px;
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--sky);
+  font-size: 26px;
+  cursor: pointer;
+  padding: 0 6px 0 0;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.inner-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  flex: 1;
+}
+
+/* SECTION DIVIDER */
+.section-divider {
+  width: 100%;
+  max-width: 420px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 8px 0;
+}
+
+/* COLLAPSIBLE TOOLS SECTION */
+.tools-section {
+  width: 100%;
+  max-width: 420px;
+}
+.tools-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.tools-toggle-label {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: var(--sky);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+.tools-toggle-arrow {
+  color: var(--sky);
+  font-size: 14px;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+.tools-toggle-arrow.open { transform: rotate(90deg); }
+.tools-inner {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+}
+.tools-inner.open { display: flex; }
+
+/* VISIT COUNTER */
+.visit-counter {
+  margin-top: 60px;
+  text-align: center;
+}
+.visit-label {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.35);
+}
+.visit-num {
+  font-size: 22px;
+  color: rgba(255,255,255,0.6);
+  display: block;
+  margin-top: 4px;
+}
+
+/* USER BADGE */
+.user-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+  background: rgba(0,191,255,0.1);
+  border: 1px solid rgba(0,191,255,0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  margin-bottom: 28px;
+  margin-top: 8px;
+}
+
+/* BUTTONS */
+.btn-primary {
+  width: 75%;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--sky);
+  color: var(--navy);
+  border: none;
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:active { transform: scale(0.98); opacity: 0.8; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-secondary {
+  width: 75%;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,191,255,0.3);
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-secondary:hover { border-color: var(--sky); color: rgba(255,255,255,0.7); }
+
+/* FORM ELEMENTS */
+.dropdown-wrap {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 16px;
+}
+.dropdown-label {
+  font-family: 'Roboto', 'Crimson Pro', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 6px;
+  display: block;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.dropdown-wrap select, .search-input {
+  width: 100%;
+  height: 54px;
+  border-radius: 10px;
+  border: 2px solid rgba(0,191,255,0.3);
+  background: rgba(0,0,0,0.35);
+  color: var(--white);
+  font-size: 14px;
+  font-family: 'Crimson Pro', serif;
+  padding: 0 16px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.dropdown-wrap select:focus, .search-input:focus { border-color: var(--sky); }
+.dropdown-wrap .chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sky);
+  pointer-events: none;
+  font-size: 14px;
+}
+.dropdown-wrap { position: relative; }
+
+/* RESULT IMAGE DISPLAY */
+.chart-result {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 20px;
+  text-align: center;
+  display: none;
+}
+.chart-result.active { display: block; }
+.chart-result img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.chart-na {
+  padding: 40px;
+  background: var(--dim2);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  color: var(--text-mid);
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================================
+   SCREEN 0 — LOGIN
+   ============================================================ */
+#screen-B0-login .id-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px 16px;
+  border: 2px solid rgba(0,191,255,0.3);
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  background: rgba(0,0,0,0.3);
+  color: white;
+  outline: none;
+  text-align: center;
+  text-transform: uppercase;
+  display: none;
+  margin-top: 14px;
+}
+#screen-B0-login .id-input::placeholder { color: rgba(255,255,255,0.25); }
+#screen-B0-login .id-input:focus { border-color: var(--sky); }
+#btn-go-id {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px;
+  background: var(--sky);
+  color: var(--navy);
+  border: none;
+  border-radius: 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  display: none;
+  margin-top: 10px;
+}
+.login-note {
+  font-size: 13px;
+  color: var(--text-mid);
+  text-align: center;
+  margin-top: 24px;
+  max-width: 320px;
+  line-height: 1.7;
+}
+
+/* ============================================================
+   UNIVERSAL LOADING STATE — SPGo Super Portal Design System
+   All loading/status text across the portal must use:
+   - Font: Crimson Pro, italic
+   - Color: #ccff00 (lime) while loading, rgba(255,255,255,0.5) on error
+   - Animation: haircutPulse 1.2s ease-in-out infinite
+   - Text: "Loading…" (never "Loading your charts...", "Searching...", etc.)
+   - Apply class "sp-loading" to any loading text element
+   - Apply class "sp-loading-img" to any logo image shown while loading
+   The verifying screen also follows this pattern.
+   ============================================================ */
+.sp-loading {
+  font-family: 'Crimson Pro', serif !important;
+  font-style: italic !important;
+  font-size: 15px !important;
+  color: #ccff00 !important;
+  animation: haircutPulse 1.2s ease-in-out infinite !important;
+  text-align: center;
+}
+.sp-loading-img {
+  animation: haircutGlowBlob 1.6s ease-in-out infinite !important;
+}
+
+@keyframes haircutGlowBlob {
+  0%,100% { filter: drop-shadow(0 0 6px rgba(204,255,0,0.9)) drop-shadow(0 0 20px rgba(204,255,0,0.5)); transform: scale(1); }
+  50%      { filter: drop-shadow(0 0 18px rgba(204,255,0,1)) drop-shadow(0 0 40px rgba(204,255,0,0.7)); transform: scale(1.07); }
+}
+@keyframes haircutPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+.fcs-container { border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.12); margin-bottom:16px; background:rgba(255,255,255,0.04); }
+.fcs-section-label { font-family:'Cinzel',serif; font-size:13px; letter-spacing:0.15em; color:#ffffff; text-transform:uppercase; text-align:center; margin-bottom:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); }
+.fcs-row { display:flex; flex-direction:row; align-items:stretch; gap:0; margin-bottom:0; border-radius:0; overflow:hidden; border:none; border-bottom:1px solid rgba(255,255,255,0.06); background:transparent; }
+.fcs-row:last-child { border-bottom:none; }
+.fcs-emoji-box { width:64px; min-width:64px; background:transparent; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; padding:8px; gap:2px; font-size:18px; line-height:1.3; border-right:1px solid rgba(255,255,255,0.07); }
+.fcs-mr-box { flex:1; background:transparent; padding:12px 14px; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+.fcs-cn { font-family:'Noto Serif TC',serif; font-size:15px; font-weight:700; color:#ff6666; line-height:1.3; }
+.fcs-vn { font-family:'Noto Serif TC',serif; font-size:13px; color:#cc88ff; line-height:1.3; }
+.fcs-en { font-family:'Roboto',sans-serif; font-size:12px; color:#ffffff; opacity:0.85; line-height:1.3; }
+.fcs-check-box { width:32px; min-width:32px; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; font-size:16px; color:#00cc44; }
+
+
+/* ── Node-type card colours ── */
+.card-alias  { font-family:'Grey Qo',cursive; font-weight:400; font-size:16px; }
+.card-hub    { background:#000073; border-color:#00BFFF; box-shadow:0 2px 12px rgba(0,191,255,0.3); }
+.card-portal { background:#0CDD08; border-color:#09AA05; box-shadow:0 2px 12px rgba(12,221,8,0.3); }
+.card-ext    { background:#E0B0FF; border-color:#8833CC; box-shadow:0 2px 12px rgba(136,51,204,0.3); }
+.card-tool   { background:#00BFFF; border-color:#0090CC; box-shadow:0 2px 12px rgba(0,191,255,0.35); }
+.card-hub .card-title, .card-portal .card-title, .card-tool .card-title { color:#ffffff; }
+.card-ext .card-title { color:#9900ff; }
+.card-hub .card-arrow, .card-portal .card-arrow, .card-tool .card-arrow { color:rgba(255,255,255,0.7); }
+.card-ext .card-arrow { color:#8833CC; }
+.card-hub .card-desc, .card-portal .card-desc, .card-tool .card-desc { color:rgba(255,255,255,0.75); }
+.card-ext .card-desc { color:rgba(80,0,120,0.85); }
+
+/* ============================================================
+   SCREEN B4.3 — HOUSE FACING RULER (MAP)
+   ============================================================ */
+#map-container {
+  width: 100%;
+  max-width: 700px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  position: relative;
+}
+#leaflet-map {
+  width: 100%;
+  height: 400px;
+}
+#map-canvas-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 500;
+}
+#map-draw-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 600;
+  cursor: crosshair;
+  display: none;
+}
+.map-search-wrap {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.map-search-wrap input {
+  flex: 1;
+  height: 50px;
+  border-radius: 10px;
+  border: 2px solid rgba(0,191,255,0.3);
+  background: rgba(0,0,0,0.35);
+  color: white;
+  font-size: 14px;
+  font-family: 'Crimson Pro', serif;
+  padding: 0 16px;
+  outline: none;
+}
+.map-search-wrap input:focus { border-color: var(--sky); }
+.map-search-btn {
+  height: 50px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: var(--sky);
+  color: var(--navy);
+  border: none;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.map-toolbar {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,191,255,0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 10px;
+}
+.map-tool-btn {
+  background: transparent;
+  border: 1px solid rgba(0,191,255,0.3);
+  color: var(--sky);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.map-tool-btn:hover { background: rgba(0,191,255,0.1); border-color: var(--sky); }
+.map-tool-btn.active { background: rgba(0,191,255,0.15); border-color: var(--sky); }
+.map-tool-btn.danger { border-color: rgba(255,80,80,0.4); color: rgba(255,80,80,0.8); }
+.map-tool-btn.danger:hover { background: rgba(255,80,80,0.1); }
+.map-instr {
+  font-size: 12px;
+  color: var(--text-mid);
+  font-style: italic;
+  flex: 1;
+  min-width: 160px;
+}
+
+/* BEARING RESULT */
+.bearing-result {
+  width: 100%;
+  max-width: 700px;
+  margin-top: 14px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,191,255,0.25);
+  border-top: 2px solid rgba(200,169,110,0.5);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: none;
+}
+.bearing-result.active { display: block; }
+.bearing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.b-block { text-align: center; }
+.b-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: block;
+  margin-bottom: 4px;
+}
+.b-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: #c8a96e;
+  line-height: 1;
+}
+.b-val sup { font-size: 1rem; opacity: 0.6; }
+.b-val.sm { font-size: 1.4rem; }
+.b-sub { font-size: 13px; color: var(--text-mid); font-style: italic; margin-top: 2px; }
+
+.bearing-result-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 14px;
+}
+.result-copy-btn {
+  background: transparent;
+  border: 1px solid rgba(200,169,110,0.5);
+  color: #c8a96e;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.08s, opacity 0.08s;
+  -webkit-tap-highlight-color: rgba(200,169,110,0.3);
+}
+.result-copy-btn:hover { background: rgba(200,169,110,0.1); }
+.result-copy-btn:active { transform: scale(0.94); opacity: 0.7; background: rgba(200,169,110,0.2); }
+.result-period-btn {
+  background: var(--sky);
+  border: none;
+  color: var(--navy);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.copy-confirm {
+  font-size: 12px;
+  color: var(--sky);
+  font-style: italic;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.copy-confirm.show { opacity: 1; }
+
+/* PERIOD PICKER (for B4.3 flow) */
+.period-picker {
+  width: 100%;
+  max-width: 700px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.period-picker.active { display: flex; }
+.period-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.period-btn {
+  background: var(--dim2);
+  border: 1px solid rgba(0,191,255,0.2);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 12px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.period-btn:hover { background: rgba(0,191,255,0.1); border-color: var(--sky); }
+.period-btn.selected { background: rgba(0,191,255,0.15); border-color: var(--sky); }
+
+/* MAGNETIC SECTION */
+.magnetic-section {
+  width: 100%;
+  max-width: 700px;
+  margin-top: 16px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(0,191,255,0.15);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: none;
+}
+.magnetic-section.active { display: block; }
+.mag-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(200,169,110,0.7);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mag-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(200,169,110,0.2);
+}
+.mag-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.mag-field label {
+  font-size: 12px;
+  color: var(--text-mid);
+  min-width: 140px;
+  font-style: italic;
+}
+.mag-field input {
+  flex: 1;
+  min-width: 80px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,191,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color: white;
+  font-size: 13px;
+  padding: 0 12px;
+  outline: none;
+}
+.mag-field input:focus { border-color: var(--sky); }
+.mag-calc-btn {
+  width: 100%;
+  margin-top: 10px;
+  height: 46px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid rgba(200,169,110,0.4);
+  color: #c8a96e;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mag-calc-btn:hover { background: rgba(200,169,110,0.08); }
+.mag-result-box {
+  margin-top: 12px;
+  padding: 14px;
+  background: rgba(200,169,110,0.06);
+  border: 1px solid rgba(200,169,110,0.15);
+  border-radius: 8px;
+  display: none;
+}
+.mag-result-box.active { display: block; }
+
+/* ============================================================
+   B4.4 — FLYING STAR CHART LOOKUP
+   ============================================================ */
+.fs-result-wrap {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 16px;
+  display: none;
+}
+.fs-result-wrap.active { display: block; }
+.fs-chart-img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="profile-corner" onclick="toggleLogoutPopup()">
+  <img id="profile-corner-img" src="" alt="">
+  <div id="profile-corner-code"></div>
+</div>
+<div id="logout-popup">
+  <button onclick="showProfilePicUploader()" style="background:none;border:1px solid rgba(0,191,255,0.4);color:rgba(0,191,255,0.85);font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.08em;padding:10px 14px;border-radius:8px;cursor:pointer;text-align:left;">👤 Change profile pic</button>
+  <button onclick="useDefaultProfilePic()" style="background:none;border:1px solid rgba(0,191,255,0.3);color:rgba(0,191,255,0.65);font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.08em;padding:10px 14px;border-radius:8px;cursor:pointer;text-align:left;">👤 Use default profile pic</button>
+  <button onclick="doLogout()">⟵ Log out</button>
+</div>
+
+<!-- Profile Pic Uploader Modal -->
+<div id="profile-pic-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,40,0.92); flex-direction:column; align-items:center; justify-content:center; padding:24px;">
+  <div style="background:#000073; border:1px solid rgba(0,191,255,0.3); border-radius:16px; padding:24px; width:100%; max-width:380px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+    <div style="font-family:'Cinzel',serif; font-size:14px; color:var(--sky); letter-spacing:0.12em;">Change Profile Pic</div>
+    <div style="font-family:'Crimson Pro',serif; font-size:12px; font-style:italic; color:rgba(255,100,100,0.8); text-align:center;">Replacing this photo permanently deletes it. There's no profile album like Facebook.</div>
+
+    <!-- Step 1: file pick -->
+    <div id="ppu-step1" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <label style="width:100%; padding:14px; background:rgba(0,191,255,0.1); border:1px dashed rgba(0,191,255,0.4); border-radius:10px; text-align:center; cursor:pointer; font-family:'Crimson Pro',serif; font-size:14px; color:var(--sky);">
+        📁 Pick a photo
+        <input type="file" accept="image/*" id="ppu-file-input" style="display:none;" onchange="ppuFileChosen(this)">
+      </label>
+    </div>
+
+    <!-- Step 2: crop UI -->
+    <div id="ppu-step2" style="display:none; width:100%; flex-direction:column; align-items:center; gap:12px;">
+      <div style="font-family:'Crimson Pro',serif; font-size:12px; color:rgba(255,255,255,0.6); text-align:center;">Drag to reposition · Pinch or scroll to zoom</div>
+      <div style="font-family:'Crimson Pro',serif; font-size:11px; color:rgba(204,255,0,0.6); text-align:center; font-style:italic; margin-top:-6px;">Tap the circle to pick a different photo</div>
+      <div id="ppu-crop-wrap" style="position:relative; width:260px; height:260px; border-radius:50%; overflow:hidden; border:3px solid rgba(204,255,0,0.8); cursor:grab; touch-action:none; flex-shrink:0;" ondblclick="document.getElementById('ppu-file-input').click()">
+        <img id="ppu-img" style="position:absolute; transform-origin:top left;" draggable="false">
+      </div>
+      <div style="display:flex; gap:10px; width:100%;">
+        <button onclick="ppuZoom(-0.1)" style="flex:1; padding:10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; font-size:18px; cursor:pointer;">−</button>
+        <button onclick="ppuZoom(0.1)"  style="flex:1; padding:10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; font-size:18px; cursor:pointer;">+</button>
+      </div>
+      <button id="ppu-fit-btn" onclick="ppuFitObject()" style="width:100%; padding:10px; background:rgba(204,255,0,0.12); border:1px solid rgba(204,255,0,0.5); color:#ccff00; border-radius:8px; font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.1em; cursor:pointer;">⊡ Fit object inside circle</button>
+      <button onclick="ppuUpload()" id="ppu-upload-btn" style="width:100%; padding:14px; background:var(--sky); color:#000073; font-family:'Cinzel',serif; font-size:13px; font-weight:700; border:none; border-radius:10px; cursor:pointer; letter-spacing:0.1em;">Save & Upload</button>
+      <div id="ppu-status" style="font-family:'Crimson Pro',serif; font-size:13px; color:rgba(255,255,255,0.7); font-style:italic; text-align:center; min-height:20px;"></div>
+    </div>
+
+    <button onclick="closePpuModal()" style="background:none; border:none; color:rgba(255,255,255,0.4); font-family:'Cinzel',serif; font-size:11px; cursor:pointer; letter-spacing:0.1em;">✕ Cancel</button>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SCREEN: LOGIN
+     ============================================================ -->
+<div id="screen-FS-login" class="screen active">
+  <div class="site-label">FENGSHUI PORTAL</div>
+  <div class="logo-wrap">
+    <img src="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png" alt="FS">
+    <div style="font-family:'Aleo',serif; font-size:22px; font-weight:400; color:var(--sky); text-align:center; letter-spacing:0.08em; line-height:1.2;">FENGSHUI PORTAL</div>
+    <div style="font-family:'Cinzel',serif; font-size:16px; font-weight:400; color:#e0b0ff; text-align:center; letter-spacing:0.25em; line-height:1.5;">風水 Fengshui</div>
+  </div>
+  <div class="cards" style="margin-top:24px;">
+    <div class="card" id="btn-google-login" onclick="startGoogleLogin()">
+      <div class="card-icon">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:32px;height:32px;object-fit:contain;display:block;margin:0 auto;">
+      </div>
+      <div class="card-text">
+        <div class="card-title">Log in with Gmail</div>
+        <div class="card-desc">Login handled completely by Google OAuth.</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+    <p id="login-error" style="display:none; color:var(--red); font-size:12px; text-align:center; margin-top:-4px; max-width:360px; line-height:1.6;"></p>
+    <div class="card" onclick="guestLogin()">
+      <div class="card-icon">👤</div>
+      <div class="card-text">
+        <div class="card-title">Access as guest</div>
+        <div class="card-desc">Limited access — some tools unavailable</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+  </div>
+  <div class="portal-footer">
+    <div class="footer-credit">Developed by <strong>Claude</strong> · Conceived &amp; directed by <strong>SPGo</strong></div>
+    <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
+  </div>
+</div>
+
+<!-- VERIFYING OVERLAY -->
+<div id="screen-FS-verify" class="screen" style="justify-content:center; align-items:center; background:radial-gradient(ellipse at 50% 30%,rgba(0,191,255,0.12) 0%,transparent 65%),linear-gradient(180deg,#000073 0%,#00004a 100%);">
+  <img src="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png" alt="FS" style="width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(0,191,255,0.6));animation:verifyPulse 1.4s ease-in-out infinite;margin-bottom:28px;">
+  <div class="sp-loading" id="verify-text" style="margin-top:20px;">Loading…</div>
+</div>
+
+<!-- ============================================================
+     SCREEN: FENGSHUI HOME
+     ============================================================ -->
+<div id="screen-FS-home" class="screen">
+  <div class="inner-header">
+    <button class="back-btn" onclick="window.location.href='https://spgo5.github.io/Go5/'" title="Back to Super Portal">‹</button>
+    <span class="inner-title">Super Portal Go</span>
+  </div>
+  <div style="font-family:'Aleo',serif; font-size:20px; font-weight:400; color:var(--sky); text-align:center; letter-spacing:0.05em; margin-bottom:12px;">🏘️ 風水 Fengshui</div>
+  <div style="margin-bottom:8px; display:flex; justify-content:center;">
+    <img src="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png" alt="FS" style="width:70px;height:70px;object-fit:contain; filter:drop-shadow(0 0 12px rgba(0,191,255,0.4));">
+  </div>
+  <div class="cards">
+    <div style="font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(0,191,255,0.6); padding:6px 0 8px; width:100%; max-width:420px;">🛠️ Your Tools</div>
+    <p class="fs-subscriber-note" style="display:none; font-size:12px; color:rgba(255,150,150,0.8); font-style:italic; margin-bottom:10px; padding:8px 12px; background:rgba(255,0,0,0.08); border:1px solid rgba(255,0,0,0.2); border-radius:8px;">For subscribers of FS (ii) Shage only</p>
+
+    <div class="card card-tool fs-tool-gated" onclick="goTo('SPGo-L2-P2.T1-House-Facing')">
+      <div class="card-icon"><img src="https://i.postimg.cc/VsSqKmq5/FS-ii-Shage.png" alt="Ruler"></div>
+      <div class="card-text">
+        <div class="card-title">🧭 House Facing Ruler</div>
+        <div class="card-desc">SK Finlay · Measure facing direction on live map</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-tool fs-tool-gated" onclick="goTo('SPGo-L2-P2.T2-Flying-Stars')">
+      <div class="card-icon"><img src="https://i.postimg.cc/nr5T0JbR/2NW1_1.png" alt="Flying Star" style="width:42px;height:42px;object-fit:contain;"></div>
+      <div class="card-text">
+        <div class="card-title">Flying Stars Charts</div>
+        <div class="card-desc">All 飛星 fengshui charts lookup</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-tool grayed">
+      <div class="card-icon">📐</div>
+      <div class="card-text">
+        <div class="card-title">FS Ready Reckoners <span class="coming-soon-tag">Soon</span></div>
+        <div class="card-desc">Quick-reference tables</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div style="width:100%; height:1px; background:rgba(255,255,255,0.1); margin:4px 0;"></div>
+    <div style="font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(0,191,255,0.6); padding:6px 0 8px; width:100%; max-width:420px;">🌐 Sites</div>
+
+    <div class="card card-ext external" onclick="window.open('https://sites.google.com/view/fsimanju/','_blank')">
+      <div class="card-icon"><img src="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png" alt="Manju"></div>
+      <div class="card-text">
+        <div class="card-title">FS (i) <span class="card-alias" style="color:#9900ff;">Maju</span></div>
+        <div class="card-desc">巒頭 · From macro to micro fengshui — land forms to house interior</div>
+        <div class="card-desc2">🌐 Go to site ↗</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-ext external" onclick="window.open('https://sites.google.com/view/fsiishage/','_blank')">
+      <div class="card-icon"><img src="https://i.postimg.cc/VsSqKmq5/FS-ii-Shage.png" alt="Shage"></div>
+      <div class="card-text">
+        <div class="card-title">FS (ii) <span class="card-alias" style="color:#9900ff;">Shage</span></div>
+        <div class="card-desc">理氣 · Calculative Fengshui 飛星, 紫白 — it's all about timing</div>
+        <div class="card-desc2">🌐 Go to site ↗</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-ext external fs-tool-gated" onclick="window.open('https://sites.google.com/view/fsiiihiganbana/','_blank')">
+      <div class="card-icon"><img src="https://i.postimg.cc/kG6tvH48/Higanbana.png" alt="Higanbana" style="width:42px;height:42px;object-fit:contain;"></div>
+      <div class="card-text">
+        <div class="card-title">FS (iii) <span class="card-alias" style="color:#9900ff;">Higanbana</span></div>
+        <div class="card-desc">理氣 Fengshui charting techniques</div>
+        <div class="card-desc2">🌐 Go to site ↗</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-ext external fs-tool-gated" onclick="window.open('https://sites.google.com/view/fsivkurinso/','_blank')">
+      <div class="card-icon"><img src="https://i.postimg.cc/d0dgkQvX/Primula-white.png" alt="Kurinso" style="width:42px;height:42px;object-fit:contain;"></div>
+      <div class="card-text">
+        <div class="card-title">FS (iv) <span class="card-alias" style="color:#9900ff;">Kurinso</span></div>
+        <div class="card-desc">Fengshui classics — full texts</div>
+        <div class="card-desc2">🌐 Go to site ↗</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-ext external" onclick="window.open('https://sites.google.com/view/fsvsokei/','_blank')">
+      <div class="card-icon"><img src="https://i.postimg.cc/9M0MFXmG/FS-v-Sokei.png" alt="Sokei"></div>
+      <div class="card-text">
+        <div class="card-title">FS (v) <span class="card-alias" style="color:#9900ff;">Sokei</span></div>
+        <div class="card-desc">Comprehensive analyses of fengshui cases</div>
+        <div class="card-desc2">🌐 Go to site ↗</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+    <div class="card card-ext external fs-tool-gated" onclick="window.open('https://sites.google.com/view/fsvikuchinashi','_blank')">
+      <div class="card-icon"><img src="https://i.postimg.cc/qqwDTzrF/Kuchinashi.png" alt="Kuchinashi" style="width:42px;height:42px;object-fit:contain;"></div>
+      <div class="card-text">
+        <div class="card-title">FS (vi) <span class="card-alias" style="color:#9900ff;">Kuchinashi</span></div>
+        <div class="card-desc">General Fengshui Portal</div>
+        <div class="card-desc2">🌐 Go to site ↗</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+  </div>
+  <div class="portal-footer">
+    <div class="footer-credit">Developed by <strong>Claude</strong> · Conceived &amp; directed by <strong>SPGo</strong></div>
+    <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
+  </div>
+</div>
+
+
+<div id="SPGo-L2-P2.T1-House-Facing" class="screen" style="padding-bottom: 80px;">
+  <div class="inner-header" style="max-width:700px; width:100%;">
+    <button class="back-btn" onclick="goTo('screen-FS-home')">‹</button>
+    <span class="inner-title">Fengshui Menu</span>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <img src="https://i.postimg.cc/VsSqKmq5/FS-ii-Shage.png" alt="Shage" style="width:44px; height:44px; object-fit:contain; filter:drop-shadow(0 0 10px rgba(0,191,255,0.4));">
+    <div>
+      <div style="font-family:'Cinzel',serif; font-size:13px; color:var(--sky);">FINLAY SK · 羅盤</div>
+      <div style="font-size:12px; color:var(--text-mid); font-style:italic;">Search address → draw arrow → get bearing</div>
+    </div>
+  </div>
+
+  <!-- Map Search -->
+  <div class="map-search-wrap">
+    <input type="text" id="map-search-input" placeholder="Search address or paste GPS coordinates…" onkeydown="if(event.key==='Enter') searchAddress()">
+    <button class="map-search-btn" onclick="searchAddress()">Search</button>
+  </div>
+
+  <!-- MAP -->
+  <div id="map-container">
+    <div id="leaflet-map"></div>
+    <canvas id="map-draw-layer"></canvas>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="map-toolbar">
+    <span class="map-instr" id="map-instr-text">Search for an address, then click "Draw Arrow" to measure facing direction</span>
+    <button class="map-tool-btn" id="btn-draw-mode" onclick="toggleDrawMode()">✏️ Draw Arrow</button>
+    <button class="map-tool-btn danger" onclick="clearArrow()">✕ Clear</button>
+  </div>
+
+  <!-- TRUE NORTH RESULT -->
+  <div class="bearing-result" id="bearing-result">
+    <div class="bearing-grid">
+      <div class="b-block">
+        <span class="b-label">True North Bearing</span>
+        <div class="b-val" id="b-true">—<sup>°</sup></div>
+      </div>
+      <div class="b-block">
+        <span class="b-label">Direction</span>
+        <div class="b-val sm" id="b-dir">—</div>
+        <div class="b-sub" id="b-gua">—</div>
+      </div>
+      <div class="b-block">
+        <span class="b-label">24 Mountains</span>
+        <div class="b-val sm" id="b-sector">—</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+      <button class="result-copy-btn" onclick="copyBearingResult()" style="align-self:flex-start;">📋 Copy Result</button>
+      <span class="copy-confirm" id="bear-copy-confirm">Copied!</span>
+      <button class="result-period-btn" onclick="toggleMagneticSection()" style="align-self:flex-start;">🧲 Convert to Magnetic North bearing</button>
+    </div>
+  </div>
+
+  <!-- MAGNETIC NORTH SECTION -->
+  <div class="magnetic-section" id="magnetic-section">
+    <div class="mag-title">Magnetic North Correction</div>
+    <p style="font-size:12px; color:var(--text-dim); font-style:italic; margin-bottom:14px;">Magnetic pole drifts yearly — update these values annually for accuracy</p>
+    <div class="mag-field">
+      <label>Pole Lat range (°N)</label>
+      <input type="number" id="pole-lat1" value="85.5" step="0.1" min="60" max="90" style="max-width:90px;">
+      <span style="color:var(--text-dim); font-size:12px;">to</span>
+      <input type="number" id="pole-lat2" value="86.0" step="0.1" min="60" max="90" style="max-width:90px;">
+    </div>
+    <div class="mag-field">
+      <label>Pole Lng range (°E)</label>
+      <input type="number" id="pole-lng1" value="135" step="0.5" min="-180" max="180" style="max-width:90px;">
+      <span style="color:var(--text-dim); font-size:12px;">to</span>
+      <input type="number" id="pole-lng2" value="164" step="0.5" min="-180" max="180" style="max-width:90px;">
+    </div>
+    <button class="mag-calc-btn" onclick="calcMagnetic()">Calculate Magnetic Bearing</button>
+
+    <!-- Magnetic result -->
+    <div class="mag-result-box" id="mag-result-box">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <div><span style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);">Magnetic Bearing</span><br><span style="font-family:'Cormorant Garamond',serif; font-size:2rem; color:#c8a96e;" id="mag-bearing-val">—°</span></div>
+        <div><span style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);">Declination</span><br><span style="font-size:14px; color:var(--text-mid);" id="mag-decl-val">—</span></div>
+        <div><span style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);">24 Mountains (Mag)</span><br><span style="font-size:14px; color:var(--sky);" id="mag-sector-val">—</span></div>
+        <div><span style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);">Direction (Mag)</span><br><span style="font-size:14px; color:var(--text-mid);" id="mag-dir-val">—</span></div>
+      </div>
+
+      <!-- Period dropdown -->
+      <div style="font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(200,169,110,0.7); margin-bottom:10px;">Select Period</div>
+      <div style="position:relative; margin-bottom:14px;">
+        <select id="period-select-ruler" onchange="rulerPeriodSelected()" style="width:100%; height:50px; border-radius:10px; border:2px solid rgba(0,191,255,0.3); background:rgba(0,0,0,0.35); color:white; font-size:14px; font-family:'Crimson Pro',serif; padding:0 16px; outline:none; appearance:none; cursor:pointer;">
+          <option value="">— Select Period to get Flying Star chart —</option>
+        </select>
+        <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--sky); pointer-events:none; font-size:14px;">▾</span>
+      </div>
+
+      <!-- Two bearing buttons -->
+      <div id="ruler-bearing-btns" style="display:none; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <button id="ruler-btn-true" onclick="rulerShowChart('true')" style="flex:1; min-width:140px; padding:10px; border-radius:8px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky);">True North bearing</button>
+        <button id="ruler-btn-mag" onclick="rulerShowChart('mag')" style="flex:1; min-width:140px; padding:10px; border-radius:8px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);">Magnetic bearing</button>
+      </div>
+
+      <!-- Chart display -->
+      <div id="ruler-chart-result" style="display:none;">
+        <div style="display:flex; gap:10px; justify-content:center; margin-bottom:10px;">
+          <button id="ruler-btn-north-top" onclick="rulerSetOrientation(true)" style="flex:1; max-width:160px; padding:8px; border-radius:8px; font-family:'Cinzel',serif; font-size:10px; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky); box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);">🧭 North at top</button>
+          <button id="ruler-btn-facing-top" onclick="rulerSetOrientation(false)" style="flex:1; max-width:160px; padding:8px; border-radius:8px; font-family:'Cinzel',serif; font-size:10px; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);">🏠 Facing on top</button>
+        </div>
+        <div class="chart-na" id="ruler-chart-na" style="display:none;">Chart image not yet uploaded — N/A</div>
+        <img id="ruler-chart-img" class="fs-chart-img" src="" alt="Flying Star Chart" style="display:none;" onerror="rulerChartError(this)">
+        <div id="ruler-download-wrap" style="display:none; margin-top:10px; text-align:center;">
+          <a id="ruler-download-btn" download style="display:inline-block; padding:10px 24px; background:transparent; border:1px solid rgba(200,169,110,0.5); color:#c8a96e; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.12em; border-radius:8px; text-decoration:none; cursor:pointer;">⬇ Download Chart</a>
+        </div>
+      </div>
+
+      <!-- Copy all results -->
+      <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+        <button class="result-copy-btn" onclick="copyAllBearingResults()" style="width:100%;">📋 Copy All Results (True + Magnetic)</button>
+        <span class="copy-confirm" id="all-copy-confirm" style="display:block; text-align:center; margin-top:6px;">Copied!</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-footer">
+    <div class="footer-credit">Developed by <strong>Claude</strong> · Conceived &amp; directed by <strong>SPGo</strong></div>
+    <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN B4.4: FLYING STAR CHART LOOKUP (standalone)
+     ============================================================ -->
+<div id="SPGo-L2-P2.T2-Flying-Stars" class="screen">
+  <div class="inner-header" style="max-width:420px; width:100%;">
+    <button class="back-btn" onclick="goTo('screen-FS-home')">‹</button>
+    <span class="inner-title">Fengshui Menu</span>
+  </div>
+
+  <div style="text-align:center; margin-bottom:24px;">
+    <div style="font-family:'Cinzel',serif; font-size:13px; color:var(--sky); margin-bottom:6px;">All 飛星 Fengshui Charts</div>
+    <div style="font-size:13px; color:var(--text-mid); font-style:italic;">Select period and house facing to view the chart</div>
+  </div>
+
+  <div class="dropdown-wrap">
+    <label class="dropdown-label">House Period</label>
+    <select id="fs-period-select" onchange="fsLookup()">
+      <option value="">— Select Period —</option>
+    </select>
+    <span class="chevron">▾</span>
+  </div>
+
+  <div class="dropdown-wrap">
+    <label class="dropdown-label">House Facing</label>
+    <select id="fs-facing-select" onchange="fsLookup()" style="font-family:'Courier New',monospace; font-size:13px;">
+      <option value="">— Select Facing —</option>
+      <option value="N1"> N1   337.5° – 352.5°</option>
+      <option value="N2"> N2   352.5° –   7.5°</option>
+      <option value="N3"> N3     7.5° –  22.5°</option>
+      <option value="NE1">NE1   22.5° –  37.5°</option>
+      <option value="NE2">NE2   37.5° –  52.5°</option>
+      <option value="NE3">NE3   52.5° –  67.5°</option>
+      <option value="E1"> E1   67.5° –  82.5°</option>
+      <option value="E2"> E2   82.5° –  97.5°</option>
+      <option value="E3"> E3   97.5° – 112.5°</option>
+      <option value="SE1">SE1  112.5° – 127.5°</option>
+      <option value="SE2">SE2  127.5° – 142.5°</option>
+      <option value="SE3">SE3  142.5° – 157.5°</option>
+      <option value="S1"> S1  157.5° – 172.5°</option>
+      <option value="S2"> S2  172.5° – 187.5°</option>
+      <option value="S3"> S3  187.5° – 202.5°</option>
+      <option value="SW1">SW1  202.5° – 217.5°</option>
+      <option value="SW2">SW2  217.5° – 232.5°</option>
+      <option value="SW3">SW3  232.5° – 247.5°</option>
+      <option value="W1"> W1  247.5° – 262.5°</option>
+      <option value="W2"> W2  262.5° – 277.5°</option>
+      <option value="W3"> W3  277.5° – 292.5°</option>
+      <option value="NW1">NW1  292.5° – 307.5°</option>
+      <option value="NW2">NW2  307.5° – 322.5°</option>
+      <option value="NW3">NW3  322.5° – 337.5°</option>
+    </select>
+    <span class="chevron">▾</span>
+  </div>
+
+  <div class="fs-result-wrap" id="fs-chart-wrap">
+    <div style="display:flex; gap:10px; justify-content:center; margin-bottom:14px;">
+      <button id="fs-btn-north" onclick="fsSetOrientation(true)" style="flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky); box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);">🧭 North at top</button>
+      <button id="fs-btn-facing" onclick="fsSetOrientation(false)" style="flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);">🏠 Facing on top</button>
+    </div>
+    <div class="chart-na" id="fs-chart-na" style="display:none;">Chart image not yet uploaded — N/A</div>
+    <img id="fs-chart-img" class="fs-chart-img" src="" alt="Flying Star Chart" style="display:none;" onerror="fsChartError(this)">
+    <div id="fs-download-wrap" style="display:none; margin-top:12px; text-align:center;">
+      <a id="fs-download-btn" download style="display:inline-block; padding:10px 24px; background:transparent; border:1px solid rgba(200,169,110,0.5); color:#c8a96e; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.12em; border-radius:8px; text-decoration:none; cursor:pointer;">⬇ Download Chart</a>
+    </div>
+  </div>
+
+  <div class="portal-footer">
+    <div class="footer-credit">Developed by <strong>Claude</strong> · Conceived &amp; directed by <strong>SPGo</strong></div>
+    <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<!-- spgo-core.js: auth, profile, gasJsonp — loads from shared CDN when deployed -->
+<script src="https://spgo5.github.io/Go5.SHARED/spgo-core.js"></script>
+<script>
+
+// ── Auth stubs: active only if spgo-core.js failed to load ──────────────────
+if (typeof checkOAuthReturn === 'undefined') {
+  window.checkOAuthReturn   = function() { goTo('screen-FS-login'); };
+}
+if (typeof startGoogleLogin === 'undefined') {
+  window.startGoogleLogin   = function() { alert('Google login requires the live site. Use guest access for preview.'); };
+}
+if (typeof updateProfileCorner === 'undefined') {
+  window.updateProfileCorner = function() {};
+}
+if (typeof toggleLogoutPopup === 'undefined') {
+  window.toggleLogoutPopup  = function() {};
+}
+if (typeof doLogout === 'undefined') {
+  window.doLogout           = function() { goTo('screen-FS-login'); };
+}
+if (typeof showProfilePicUploader === 'undefined') {
+  window.showProfilePicUploader = function() {};
+}
+if (typeof useDefaultProfilePic === 'undefined') {
+  window.useDefaultProfilePic   = function() {};
+}
+if (typeof closePpuModal === 'undefined') {
+  window.closePpuModal      = function() {};
+}
+if (typeof gasJsonp === 'undefined') {
+  window.gasJsonp           = function(q, cb) { cb && cb({}); };
+}
+// Global state vars (normally set by spgo-core.js)
+if (typeof currentUser === 'undefined')          window.currentUser          = null;
+if (typeof currentUserName === 'undefined')      window.currentUserName      = 'Guest';
+if (typeof isGuest === 'undefined')              window.isGuest              = false;
+if (typeof currentFsSubscriber === 'undefined')  window.currentFsSubscriber  = false;
+if (typeof currentHasPortal === 'undefined')     window.currentHasPortal     = false;
+if (typeof currentTier === 'undefined')          window.currentTier          = null;
+// ────────────────────────────────────────────────────────────────────────────
+
+
+// ============================================================
+// FENGSHUI PORTAL — portal-specific code
+// ============================================================
+
+const navStack = ['screen-FS-login'];
+
+function goTo(screenId) {
+  const current = navStack[navStack.length - 1];
+  if (current !== screenId) navStack.push(screenId);
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(screenId);
+  if (target) { target.classList.add('active'); window.scrollTo(0, 0); }
+  history.pushState({ screenId }, '', '#' + screenId);
+  if (screenId === 'SPGo-L2-P2.T1-House-Facing') initMap();
+  if (screenId === 'screen-FS-home') applyFsSubscriberGating();
+  if (screenId === 'screen-FS-home' || (current === 'SPGo-L2-P2.T2-Flying-Stars' && screenId !== 'SPGo-L2-P2.T2-Flying-Stars')) resetFlyingStarScreen();
+  if (screenId === 'SPGo-L2-P2.T2-Flying-Stars') resetFlyingStarScreen();
+  if (screenId === 'screen-FS-login') {
+    try { localStorage.removeItem('go_saved_user'); } catch(e) {}
+    currentUser = null; currentUserName = 'Guest'; isGuest = false;
+    currentFsSubscriber = false; currentHasPortal = false;
+  }
+}
+
+function goBack() {
+  if (navStack.length > 1) {
+    navStack.pop();
+    const prev = navStack[navStack.length - 1];
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(prev);
+    if (target) { target.classList.add('active'); window.scrollTo(0, 0); }
+  }
+}
+
+function showVerifying() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const v = document.getElementById('screen-FS-verify');
+  if (v) v.classList.add('active');
+}
+
+function setHomeState() {
+  goTo('screen-FS-home');
+  updateProfileCorner();
+  applyFsSubscriberGating();
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  goTo('screen-FS-login');
+}
+
+function guestLogin() {
+  isGuest = true; currentUser = null; currentUserName = 'Guest';
+  currentFsSubscriber = false; currentHasPortal = false; currentTier = null;
+  setHomeState();
+}
+
+function applyFsSubscriberGating() {
+  const note = document.querySelector('.fs-subscriber-note');
+  const gated = document.querySelectorAll('.fs-tool-gated');
+  const hasAccess = currentFsSubscriber || (!isGuest && currentUser);
+  if (note) note.style.display = hasAccess ? 'none' : 'block';
+  gated.forEach(el => {
+    el.classList.toggle('grayed', !hasAccess);
+    el.style.pointerEvents = hasAccess ? '' : 'none';
+  });
+}
+
+window.addEventListener('popstate', function(e) {
+  if (navStack.length > 1) {
+    navStack.pop();
+    const prev = navStack[navStack.length - 1];
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(prev);
+    if (target) { target.classList.add('active'); window.scrollTo(0, 0); }
+  } else {
+    history.pushState({ screenId: navStack[0] }, '', '#' + navStack[0]);
+  }
+});
+
+let swipeStartX = 0, swipeStartY = 0;
+document.addEventListener('touchstart', e => {
+  swipeStartX = e.touches[0].clientX; swipeStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
+  if (dx > 60 && dy < 40) goBack();
+}, { passive: true });
+
+// ============================================================
+// FENGSHUI DATA
+// ============================================================
+const OCTANTS = [
+  {name:'North',     zh:'坎', dir:'N',  min:337.5, max:22.5},
+  {name:'Northeast', zh:'艮', dir:'NE', min:22.5,  max:67.5},
+  {name:'East',      zh:'震', dir:'E',  min:67.5,  max:112.5},
+  {name:'Southeast', zh:'巽', dir:'SE', min:112.5, max:157.5},
+  {name:'South',     zh:'離', dir:'S',  min:157.5, max:202.5},
+  {name:'Southwest', zh:'坤', dir:'SW', min:202.5, max:247.5},
+  {name:'West',      zh:'兌', dir:'W',  min:247.5, max:292.5},
+  {name:'Northwest', zh:'乾', dir:'NW', min:292.5, max:337.5},
+];
+
+const M24 = [
+  {n:'壬', code:'N1',  a:337.5, b:352.5},
+  {n:'子', code:'N2',  a:352.5, b:7.5},
+  {n:'癸', code:'N3',  a:7.5,   b:22.5},
+  {n:'丑', code:'NE1', a:22.5,  b:37.5},
+  {n:'艮', code:'NE2', a:37.5,  b:52.5},
+  {n:'寅', code:'NE3', a:52.5,  b:67.5},
+  {n:'甲', code:'E1',  a:67.5,  b:82.5},
+  {n:'卯', code:'E2',  a:82.5,  b:97.5},
+  {n:'乙', code:'E3',  a:97.5,  b:112.5},
+  {n:'辰', code:'SE1', a:112.5, b:127.5},
+  {n:'巽', code:'SE2', a:127.5, b:142.5},
+  {n:'巳', code:'SE3', a:142.5, b:157.5},
+  {n:'丙', code:'S1',  a:157.5, b:172.5},
+  {n:'午', code:'S2',  a:172.5, b:187.5},
+  {n:'丁', code:'S3',  a:187.5, b:202.5},
+  {n:'未', code:'SW1', a:202.5, b:217.5},
+  {n:'坤', code:'SW2', a:217.5, b:232.5},
+  {n:'申', code:'SW3', a:232.5, b:247.5},
+  {n:'庚', code:'W1',  a:247.5, b:262.5},
+  {n:'酉', code:'W2',  a:262.5, b:277.5},
+  {n:'辛', code:'W3',  a:277.5, b:292.5},
+  {n:'戌', code:'NW1', a:292.5, b:307.5},
+  {n:'乾', code:'NW2', a:307.5, b:322.5},
+  {n:'亥', code:'NW3', a:322.5, b:337.5},
+];
+
+// Periods: P9=2024-2043, P8=2004-2023, each 20 years back
+const PERIODS = [
+  {p:1, label:'Period 1 (1864–1883)'},
+  {p:2, label:'Period 2 (1884–1903)'},
+  {p:3, label:'Period 3 (1904–1923)'},
+  {p:4, label:'Period 4 (1924–1943)'},
+  {p:5, label:'Period 5 (1944–1963)'},
+  {p:6, label:'Period 6 (1964–1983)'},
+  {p:7, label:'Period 7 (1984–2003)'},
+  {p:8, label:'Period 8 (2004–2023)'},
+  {p:9, label:'Period 9 (2024–2043)'},
+];
+
+// GitHub base URL for chart images
+const CHART_IMG_BASE = 'https://raw.githubusercontent.com/dsiiiajisai/Go5/main/B4.4/';
+
+function norm(b) { b = b % 360; if (b < 0) b += 360; return b; }
+function inRange(b, a, bv) { if (a > bv) return b >= a || b < bv; return b >= a && b < bv; }
+function getOctant(b) { for (const o of OCTANTS) if (inRange(b, o.min, o.max)) return o; return OCTANTS[0]; }
+function getMtn(b) { for (const m of M24) if (inRange(b, m.a, m.b)) return m; return {n:'—', code:'—'}; }
+
+// NE3/E3/SE3/SW3/W3/NW3 share chart with their x2 counterpart
+function normalizeFacing(code) {
+  const shareMap = { NE3:'NE2', E3:'E2', SE3:'SE2', SW3:'SW2', W3:'W2', NW3:'NW2' };
+  return shareMap[code] || code;
+}
+
+// Format: [Period][Direction].[1 or 2]  — 1=North at top, 2=facing on top
+let fsNorthOnTop = true; // default: North at top
+
+function getChartUrl(period, facingCode) {
+  const fc = normalizeFacing(facingCode);
+  const suffix = fsNorthOnTop ? '1' : '2';
+  return CHART_IMG_BASE + period + fc + '.' + suffix + '.png';
+}
+
+// ============================================================
+// B4.4 FLYING STAR STANDALONE
+// ============================================================
+(function initFSDropdowns() {
+  const pSel = document.getElementById('fs-period-select');
+  PERIODS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.p;
+    opt.textContent = p.label;
+    pSel.appendChild(opt);
+  });
+})();
+
+function fsToggleOrientation() {
+  fsNorthOnTop = !fsNorthOnTop;
+  const btn = document.getElementById('fs-orient-btn');
+  btn.textContent = fsNorthOnTop ? '🧭 North at top' : '🏠 Facing on top';
+  fsLookup();
+}
+
+
+
+
+
+// ============================================================
+// B4.3 MAP & HOUSE FACING RULER
+// ============================================================
+function initMap() {
+  if (mapInstance) return; // already initialized
+  mapInstance = L.map('leaflet-map', {
+    center: [13.7563, 100.5018], // Bangkok default
+    zoom: 17,
+    zoomControl: true,
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 20,
+  }).addTo(mapInstance);
+
+  // Set up draw canvas
+  drawCanvas = document.getElementById('map-draw-layer');
+  drawCtx = drawCanvas.getContext('2d');
+  resizeDrawCanvas();
+
+  mapInstance.on('moveend zoomend resize', resizeDrawCanvas);
+  mapInstance.on('move zoom', resizeDrawCanvas);
+
+  // Draw canvas events
+  drawCanvas.addEventListener('mousedown', onDrawStart);
+  drawCanvas.addEventListener('mousemove', onDrawMove);
+  drawCanvas.addEventListener('mouseup', onDrawEnd);
+  drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); onDrawStart(e.touches[0]); }, {passive: false});
+  drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); onDrawMove(e.touches[0]); }, {passive: false});
+  drawCanvas.addEventListener('touchend', e => { e.preventDefault(); onDrawEnd(e.touches[0] || e.changedTouches[0]); }, {passive: false});
+}
+
+function resizeDrawCanvas() {
+  if (!drawCanvas || !mapInstance) return;
+  const container = mapInstance.getContainer();
+  drawCanvas.width = container.offsetWidth;
+  drawCanvas.height = container.offsetHeight;
+  if (drawnLine) redrawLine();
+}
+
+function toggleDrawMode() {
+  drawMode = !drawMode;
+  const btn = document.getElementById('btn-draw-mode');
+  drawCanvas.style.display = drawMode ? 'block' : 'none';
+  if (drawMode) {
+    btn.classList.add('active');
+    document.getElementById('map-instr-text').textContent = 'Click and drag on the map to draw the facing direction arrow';
+    // Disable map drag while drawing
+    mapInstance.dragging.disable();
+    mapInstance.scrollWheelZoom.disable();
+  } else {
+    btn.classList.remove('active');
+    document.getElementById('map-instr-text').textContent = 'Draw mode off. Pan and zoom the map freely.';
+    mapInstance.dragging.enable();
+    mapInstance.scrollWheelZoom.enable();
+  }
+}
+
+function getCanvasPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (drawCanvas.width / rect.width),
+    y: (e.clientY - rect.top) * (drawCanvas.height / rect.height),
+  };
+}
+
+function redrawLine(x1, y1, x2, y2, preview) {
+  if (!drawCtx) return;
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  if (x1 === undefined) return;
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 2) return;
+  const angle = Math.atan2(dy, dx);
+  const headLen = Math.min(24, len * 0.25);
+  const color = preview ? 'rgba(255,80,80,0.7)' : 'rgba(255,80,80,0.95)';
+
+  drawCtx.save();
+  drawCtx.strokeStyle = color;
+  drawCtx.fillStyle = color;
+  drawCtx.lineWidth = 3;
+  drawCtx.lineCap = 'round';
+
+  drawCtx.beginPath();
+  drawCtx.moveTo(x1, y1);
+  drawCtx.lineTo(x2, y2);
+  drawCtx.stroke();
+
+  drawCtx.beginPath();
+  drawCtx.moveTo(x2, y2);
+  drawCtx.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
+  drawCtx.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
+  drawCtx.closePath();
+  drawCtx.fill();
+
+  if (len > 30) {
+    const b = calcCanvasBearing(x1, y1, x2, y2);
+    drawCtx.font = 'bold 14px Cinzel, serif';
+    drawCtx.fillStyle = 'rgba(255,255,255,0.95)';
+    drawCtx.strokeStyle = 'rgba(0,0,0,0.7)';
+    drawCtx.lineWidth = 3;
+    const tx = x2 + 18 * Math.cos(angle);
+    const ty = y2 + 18 * Math.sin(angle);
+    drawCtx.strokeText(b.toFixed(1) + '°', tx, ty);
+    drawCtx.fillText(b.toFixed(1) + '°', tx, ty);
+  }
+  drawCtx.restore();
+}
+
+function calcCanvasBearing(x1, y1, x2, y2) {
+  return norm(Math.atan2(x2 - x1, -(y2 - y1)) * 180 / Math.PI);
+}
+
+function showBearingResult() {
+  if (!drawnLine) return;
+  const b = calcCanvasBearing(drawnLine.x1, drawnLine.y1, drawnLine.x2, drawnLine.y2);
+  currentTrueBearing = b;
+  const oct = getOctant(b);
+  const mtn = getMtn(b);
+
+  document.getElementById('b-true').innerHTML = b.toFixed(1) + '<sup>°</sup>';
+  document.getElementById('b-dir').textContent = oct.dir + ' · ' + oct.zh;
+  document.getElementById('b-gua').textContent = oct.name;
+  document.getElementById('b-sector').textContent = mtn.code + ' · ' + mtn.n;
+  document.getElementById('bearing-result').classList.add('active');
+
+  // Store map center for magnetic calc
+  if (mapInstance) {
+    currentMapLatLng = mapInstance.getCenter();
+  }
+
+  document.getElementById('map-instr-text').textContent =
+    'Arrow: ' + b.toFixed(1) + '° · ' + mtn.code + ' · ' + oct.name + ' — clear and redraw to remeasure';
+}
+
+function clearArrow() {
+  drawnLine = null;
+  selectedNode = null;
+  currentTrueBearing = null;
+  if (drawCtx) drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  document.getElementById('bearing-result').classList.remove('active');
+  document.getElementById('magnetic-section').classList.remove('active');
+  document.getElementById('map-instr-text').textContent = 'Arrow cleared. Draw a new arrow.';
+}
+
+function copyBearingResult() {
+  if (!currentTrueBearing) return;
+  const b = currentTrueBearing.toFixed(1);
+  const oct = getOctant(currentTrueBearing);
+  const mtn = getMtn(currentTrueBearing);
+  const text = `House Facing (True North): ${b}° — ${mtn.code} · ${oct.name} (${oct.zh})`;
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.getElementById('bear-copy-confirm');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  });
+}
+
+function toggleMagneticSection() {
+  const sec = document.getElementById('magnetic-section');
+  sec.classList.toggle('active');
+  if (sec.classList.contains('active')) {
+    // Populate period grid
+    const grid = document.getElementById('period-grid-ruler');
+    grid.innerHTML = '';
+    PERIODS.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'period-btn';
+      btn.textContent = 'P' + p.p + ' (' + p.label.match(/\((.+)\)/)[1] + ')';
+      btn.onclick = () => selectPeriodForRuler(p.p, btn);
+      grid.appendChild(btn);
+    });
+  }
+}
+
+function selectPeriodForRuler(period, btn) {
+  currentPeriodForRuler = period;
+  document.querySelectorAll('#period-grid-ruler .period-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  loadRulerChart();
+}
+
+
+
+
+
+// Magnetic bearing calculation
+function toRad(d) { return d * Math.PI / 180; }
+function toDeg(r) { return r * 180 / Math.PI; }
+function bearing(lat1, lng1, lat2, lng2) {
+  const p1 = toRad(lat1), p2 = toRad(lat2), dl = toRad(lng2 - lng1);
+  const x = Math.sin(dl) * Math.cos(p2);
+  const y = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+  return norm(toDeg(Math.atan2(x, y)));
+}
+
+
+
+// Map address search using Nominatim
+async function searchAddress() {
+  const query = document.getElementById('map-search-input').value.trim();
+  if (!query) return;
+  if (!mapInstance) initMap();
+  try {
+    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+      headers: { 'Accept-Language': 'en' }
+    });
+    const data = await resp.json();
+    if (data && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+      mapInstance.setView([lat, lon], 18);
+      currentMapLatLng = { lat, lng: lon };
+      document.getElementById('map-instr-text').textContent = 'Map loaded · Click "Draw Arrow" then drag on the map to draw the facing direction';
+    } else {
+      document.getElementById('map-instr-text').textContent = 'Address not found — try different keywords';
+    }
+  } catch (e) {
+    document.getElementById('map-instr-text').textContent = 'Search error — check your connection';
+  }
+}
+
+
+
+// ============================================================
+// MAP ARROW NODE EDITING
+// ============================================================
+let selectedNode = null; // 'start' | 'end' | null
+const NODE_RADIUS = 16;
+
+function getNodeAtPos(x, y) {
+  if (!drawnLine) return null;
+  const dxS = x - drawnLine.x1, dyS = y - drawnLine.y1;
+  if (Math.sqrt(dxS*dxS + dyS*dyS) < NODE_RADIUS) return 'start';
+  const dxE = x - drawnLine.x2, dyE = y - drawnLine.y2;
+  if (Math.sqrt(dxE*dxE + dyE*dyE) < NODE_RADIUS) return 'end';
+  return null;
+}
+
+function onDrawStart(e) {
+  if (!drawMode) return;
+  const p = getCanvasPos(e);
+
+  if (drawnLine) {
+    const node = getNodeAtPos(p.x, p.y);
+    if (node) {
+      selectedNode = node;
+      isDrawing = true;
+      return;
+    }
+  }
+
+  // Start fresh line
+  selectedNode = null;
+  isDrawing = true;
+  mapStartPt = p;
+  mapCurrentPt = p;
+}
+
+function onDrawMove(e) {
+  if (!drawMode || !isDrawing) return;
+  const p = getCanvasPos(e);
+
+  if (selectedNode && drawnLine) {
+    if (selectedNode === 'start') {
+      drawnLine.x1 = p.x; drawnLine.y1 = p.y;
+    } else {
+      drawnLine.x2 = p.x; drawnLine.y2 = p.y;
+    }
+    redrawLine(drawnLine.x1, drawnLine.y1, drawnLine.x2, drawnLine.y2, false);
+    drawNodes();
+    showBearingResult();
+    return;
+  }
+
+  mapCurrentPt = p;
+  redrawLine(mapStartPt.x, mapStartPt.y, p.x, p.y, true);
+}
+
+function onDrawEnd(e) {
+  if (!drawMode || !isDrawing) return;
+  isDrawing = false;
+
+  if (selectedNode) {
+    selectedNode = null;
+    drawNodes();
+    return;
+  }
+
+  const p = getCanvasPos(e);
+  mapCurrentPt = p;
+  const dx = p.x - mapStartPt.x, dy = p.y - mapStartPt.y;
+  if (Math.sqrt(dx*dx + dy*dy) < 10) return;
+  drawnLine = { x1: mapStartPt.x, y1: mapStartPt.y, x2: p.x, y2: p.y };
+  redrawLine(drawnLine.x1, drawnLine.y1, drawnLine.x2, drawnLine.y2, false);
+  drawNodes();
+  showBearingResult();
+}
+
+function drawNodes() {
+  if (!drawnLine || !drawCtx) return;
+  // Draw two handle nodes
+  const pts = [
+    { x: drawnLine.x1, y: drawnLine.y1, label: '○' },
+    { x: drawnLine.x2, y: drawnLine.y2, label: '●' },
+  ];
+  pts.forEach(pt => {
+    drawCtx.save();
+    drawCtx.beginPath();
+    drawCtx.arc(pt.x, pt.y, NODE_RADIUS * 0.75, 0, Math.PI * 2);
+    drawCtx.fillStyle = 'rgba(255,80,80,0.25)';
+    drawCtx.fill();
+    drawCtx.strokeStyle = 'rgba(255,255,255,0.9)';
+    drawCtx.lineWidth = 2;
+    drawCtx.stroke();
+    drawCtx.restore();
+  });
+}
+
+
+// ============================================================
+// FLYING STAR — reset helper (item 32)
+// ============================================================
+function resetFlyingStarScreen() {
+  const pSel = document.getElementById('fs-period-select');
+  const fSel = document.getElementById('fs-facing-select');
+  if (pSel) pSel.value = '';
+  if (fSel) fSel.value = '';
+  const wrap = document.getElementById('fs-chart-wrap');
+  if (wrap) wrap.classList.remove('active');
+  const img = document.getElementById('fs-chart-img');
+  if (img) { img.style.display = 'none'; img.src = ''; }
+  const na = document.getElementById('fs-chart-na');
+  if (na) na.style.display = 'none';
+  const dlWrap = document.getElementById('fs-download-wrap');
+  if (dlWrap) dlWrap.style.display = 'none';
+  // Also reset ruler chart if present
+  const rWrap = document.getElementById('ruler-chart-result');
+  if (rWrap) rWrap.style.display = 'none';
+  const rPSel = document.getElementById('period-select-ruler');
+  if (rPSel) rPSel.value = '';
+}
+
+// ============================================================
+// FLYING STAR — orientation toggle fix
+// ============================================================
+function fsSetOrientation(northOnTop) {
+  fsNorthOnTop = northOnTop;
+  const btnN = document.getElementById('fs-btn-north');
+  const btnF = document.getElementById('fs-btn-facing');
+  if (northOnTop) {
+    btnN.style.cssText = 'flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky); box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);';
+    btnF.style.cssText = 'flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);';
+  } else {
+    btnF.style.cssText = 'flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky); box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);';
+    btnN.style.cssText = 'flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);';
+  }
+  fsLookup();
+}
+
+function fsChartError(imgEl) {
+  imgEl.style.display = 'none';
+  document.getElementById('fs-chart-na').style.display = 'block';
+  document.getElementById('fs-download-wrap').style.display = 'none';
+}
+
+// Override fsLookup to also handle download button
+const _fsLookupOrig = fsLookup;
+function fsLookup() {
+  const period = document.getElementById('fs-period-select').value;
+  const facing = document.getElementById('fs-facing-select').value;
+  const wrap = document.getElementById('fs-chart-wrap');
+  const img = document.getElementById('fs-chart-img');
+  const na = document.getElementById('fs-chart-na');
+  const dlWrap = document.getElementById('fs-download-wrap');
+
+  if (!period || !facing) return;
+
+  wrap.classList.add('active');
+  na.style.display = 'none';
+  img.style.display = 'none';
+  dlWrap.style.display = 'none';
+
+  const url = getChartUrl(parseInt(period), facing);
+  img.src = url;
+  img.style.display = 'block';
+  img.onload = function() {
+    dlWrap.style.display = 'block';
+    document.getElementById('fs-download-btn').href = url;
+    document.getElementById('fs-download-btn').download = period + facing + '.png';
+  };
+}
+
+// ============================================================
+// RULER — period dropdown init + bearing buttons + ruler orientation
+// ============================================================
+let rulerMagBearing = null;
+let rulerNorthOnTop = true;
+let rulerChartFacing = null;
+
+(function initRulerPeriodDropdown() {
+  // Called when DOM ready - periods array defined earlier
+  const sel = document.getElementById('period-select-ruler');
+  if (!sel) return;
+  PERIODS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.p;
+    opt.textContent = p.label;
+    sel.appendChild(opt);
+  });
+})();
+
+function rulerPeriodSelected() {
+  const period = document.getElementById('period-select-ruler').value;
+  if (!period) return;
+  document.getElementById('ruler-bearing-btns').style.display = 'flex';
+  currentPeriodForRuler = parseInt(period);
+}
+
+function rulerShowChart(which) {
+  const btnTrue = document.getElementById('ruler-btn-true');
+  const btnMag = document.getElementById('ruler-btn-mag');
+  const selected = 'flex:1; min-width:140px; padding:10px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky);';
+  const unselected = 'flex:1; min-width:140px; padding:10px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);';
+
+  if (which === 'true') {
+    btnTrue.style.cssText = selected; btnMag.style.cssText = unselected;
+    rulerChartFacing = getMtn(currentTrueBearing).code;
+  } else {
+    btnMag.style.cssText = selected; btnTrue.style.cssText = unselected;
+    const magB = rulerMagBearing || currentTrueBearing;
+    rulerChartFacing = getMtn(magB).code;
+  }
+  loadRulerChart();
+}
+
+function rulerSetOrientation(northOnTop) {
+  rulerNorthOnTop = northOnTop;
+  const btnN = document.getElementById('ruler-btn-north-top');
+  const btnF = document.getElementById('ruler-btn-facing-top');
+  const sel = 'flex:1; max-width:160px; padding:8px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:10px; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky); box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);';
+  const unsel = 'flex:1; max-width:160px; padding:8px; border-radius:8px; font-family:\'Cinzel\',serif; font-size:10px; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);';
+  if (northOnTop) { btnN.style.cssText = sel; btnF.style.cssText = unsel; }
+  else { btnF.style.cssText = sel; btnN.style.cssText = unsel; }
+  loadRulerChart();
+}
+
+function loadRulerChart() {
+  if (!currentPeriodForRuler || !rulerChartFacing) return;
+  const wrap = document.getElementById('ruler-chart-result');
+  const img = document.getElementById('ruler-chart-img');
+  const na = document.getElementById('ruler-chart-na');
+  const dlWrap = document.getElementById('ruler-download-wrap');
+  wrap.style.display = 'block';
+  na.style.display = 'none';
+  img.style.display = 'none';
+  dlWrap.style.display = 'none';
+
+  // Use rulerNorthOnTop for orientation
+  const suffix = rulerNorthOnTop ? '1' : '2';
+  const fc = normalizeFacing(rulerChartFacing);
+  const url = CHART_IMG_BASE + currentPeriodForRuler + fc + '.' + suffix + '.png';
+  img.src = url;
+  img.style.display = 'block';
+  img.onload = function() {
+    dlWrap.style.display = 'block';
+    document.getElementById('ruler-download-btn').href = url;
+    document.getElementById('ruler-download-btn').download = currentPeriodForRuler + fc + '.' + suffix + '.png';
+  };
+}
+
+function rulerChartError(imgEl) {
+  imgEl.style.display = 'none';
+  document.getElementById('ruler-chart-na').style.display = 'block';
+  document.getElementById('ruler-download-wrap').style.display = 'none';
+}
+
+// Override calcMagnetic to store mag bearing
+const _calcMagOrig = calcMagnetic;
+function calcMagnetic() {
+  if (!currentTrueBearing) { alert('Please draw a bearing line on the map first.'); return; }
+  if (!currentMapLatLng) { alert('Map location unknown — please search an address first.'); return; }
+  const poleLat = (parseFloat(document.getElementById('pole-lat1').value) + parseFloat(document.getElementById('pole-lat2').value)) / 2;
+  const poleLng = (parseFloat(document.getElementById('pole-lng1').value) + parseFloat(document.getElementById('pole-lng2').value)) / 2;
+  const azToPole = bearing(currentMapLatLng.lat, currentMapLatLng.lng, poleLat, poleLng);
+  let decl = azToPole;
+  if (decl > 180) decl -= 360;
+  const magB = norm(currentTrueBearing - decl);
+  rulerMagBearing = magB;
+
+  const oct = getOctant(magB);
+  const mtn = getMtn(magB);
+  document.getElementById('mag-bearing-val').textContent = magB.toFixed(1) + '°';
+  document.getElementById('mag-decl-val').textContent = (decl >= 0 ? '+' : '') + decl.toFixed(3) + '° ' + (decl >= 0 ? 'East' : 'West');
+  document.getElementById('mag-sector-val').textContent = mtn.code + ' · ' + mtn.n;
+  document.getElementById('mag-dir-val').textContent = oct.dir + ' · ' + oct.zh + ' · ' + oct.name;
+  document.getElementById('mag-result-box').classList.add('active');
+}
+
+function copyAllBearingResults() {
+  if (!currentTrueBearing) return;
+  const oct = getOctant(currentTrueBearing);
+  const mtn = getMtn(currentTrueBearing);
+  let text = '=== House Facing Results ===\n';
+  text += 'True North Bearing: ' + currentTrueBearing.toFixed(1) + '°\n';
+  text += 'Direction: ' + oct.dir + ' · ' + oct.zh + ' (' + oct.name + ')\n';
+  text += '24 Mountains: ' + mtn.code + ' · ' + mtn.n + '\n';
+  if (rulerMagBearing) {
+    const magOct = getOctant(rulerMagBearing);
+    const magMtn = getMtn(rulerMagBearing);
+    const poleLat = (parseFloat(document.getElementById('pole-lat1').value) + parseFloat(document.getElementById('pole-lat2').value)) / 2;
+    const poleLng = (parseFloat(document.getElementById('pole-lng1').value) + parseFloat(document.getElementById('pole-lng2').value)) / 2;
+    text += '\n=== Magnetic North Correction ===\n';
+    text += 'Pole position used: ' + poleLat.toFixed(2) + '°N, ' + poleLng.toFixed(2) + '°E\n';
+    text += 'Magnetic Bearing: ' + rulerMagBearing.toFixed(1) + '°\n';
+    text += 'Direction (Mag): ' + magOct.dir + ' · ' + magOct.zh + ' (' + magOct.name + ')\n';
+    text += '24 Mountains (Mag): ' + magMtn.code + ' · ' + magMtn.n + '\n';
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.getElementById('all-copy-confirm');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  });
+}
+
+
+window.addEventListener('DOMContentLoaded', function() {
+  checkOAuthReturn();
+  const sel = document.getElementById('period-select-ruler');
+  if (sel && sel.options.length <= 1) {
+    PERIODS.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.p; opt.textContent = p.label;
+      sel.appendChild(opt);
+    });
+  }
+});
+</script>
+
+</body>
+</html>
