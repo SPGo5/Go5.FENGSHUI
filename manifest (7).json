@@ -1,0 +1,22 @@
+{
+  "name": "SPGo Fengshui Portal",
+  "short_name": "🏘️ Fengshui",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#04042A",
+  "theme_color": "#04042A",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/t42M7rZS/Go5-Fengshui-portal.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.postimg.cc/t42M7rZS/Go5-Fengshui-portal.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
