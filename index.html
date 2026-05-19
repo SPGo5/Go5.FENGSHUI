@@ -1242,10 +1242,6 @@ html, body {
     <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
   </div>
 
-  <div class="portal-footer">
-    <div class="footer-credit">Developed by <strong>Claude</strong> · Conceived &amp; directed by <strong>SPGo</strong></div>
-    <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
-  </div>
 </div>
 
 <!-- ============================================================
@@ -1320,10 +1316,6 @@ html, body {
     <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
   </div>
 
-  <div class="portal-footer">
-    <div class="footer-credit">Developed by <strong>Claude</strong> · Conceived &amp; directed by <strong>SPGo</strong></div>
-    <div class="footer-copy">© 2026 · SPGo · All rights reserved</div>
-  </div>
 </div>
 
 
@@ -1944,7 +1936,7 @@ function fsLookup() {
   // Build filename: e.g. P91N.1.png (period, facingCode, orientation)
   const fc       = normalizeFacing(facing);
   const suffix   = fsNorthOnTop ? '1' : '2';
-  const fileName = 'P' + parseInt(period) + fc + '.' + suffix + '.png';
+  const fileName = parseInt(period) + fc + '.' + suffix + '.PNG';
 
   // Show loading state
   img.src = '';
@@ -2050,7 +2042,7 @@ function loadRulerChart() {
 
   const suffix   = rulerNorthOnTop ? '1' : '2';
   const fc       = normalizeFacing(rulerChartFacing);
-  const fileName = 'P' + currentPeriodForRuler + fc + '.' + suffix + '.png';
+  const fileName = currentPeriodForRuler + fc + '.' + suffix + '.PNG';
 
   img.alt = 'Loading chart…';
   img.style.display  = 'block';
