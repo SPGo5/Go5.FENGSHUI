@@ -259,24 +259,7 @@ html, body {
   gap: 14px;
 }
 
-.card {
-  background: var(--dim);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
-  transition: background 0.25s, border-color 0.25s, transform 0.15s;
-  -webkit-user-select: none;
-  user-select: none;
-  text-decoration: none;
-  color: inherit;
-}
-.card:active { transform: scale(0.97); background: rgba(0,191,255,0.12); border-color: var(--sky); }
-.card.grayed { opacity: 0.35; pointer-events: none; }
-.card.external { cursor: pointer; }
+/* .card base rules: defined in spgo-core.css */
 
 .card-icon {
   width: 48px;
