@@ -1,4 +1,29 @@
 <!DOCTYPE html>
+<!--
+  ════════════════════════════════════════════════════════════════
+  SPGo PORTAL — DESIGN SYSTEM RULES FOR CLAUDE
+  ════════════════════════════════════════════════════════════════
+  This file is part of the SPGo design system.
+  All shared design tokens (colours, fonts, button styles,
+  card types, header, footer) are defined in:
+
+    https://spgo5.github.io/Go5.SHARED/spgo-core.css
+    https://spgo5.github.io/Go5.SHARED/spgo-core.js
+
+  RULES:
+  1. NEVER redefine .card-hub, .card-portal, .card-ext,
+     .card-tool, .card-screen, or .card-alias locally.
+     Edit spgo-core.css instead.
+  2. NEVER redefine .portal-footer, .footer-credit,
+     or .footer-copy locally. Footer is shared.
+  3. NEVER redefine .inner-header locally.
+  4. To change any button colour, font, or style globally,
+     edit the CSS variable in spgo-core.css :root block.
+  5. Portal-specific CSS is allowed in the local <style>
+     block only if it does not override any shared token
+     or class.
+  ════════════════════════════════════════════════════════════════
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -579,17 +604,7 @@ html, body {
 
 
 /* ── Node-type card colours ── */
-.card-alias  { font-family:'Grey Qo',cursive; font-weight:400; font-size:16px; }
-.card-hub    { background:#000073; border-color:#00BFFF; box-shadow:0 2px 12px rgba(0,191,255,0.3); }
-.card-portal { background:#0CDD08; border-color:#09AA05; box-shadow:0 2px 12px rgba(12,221,8,0.3); }
-.card-ext    { background:#E0B0FF; border-color:#8833CC; box-shadow:0 2px 12px rgba(136,51,204,0.3); }
-.card-tool   { background:#00BFFF; border-color:#0090CC; box-shadow:0 2px 12px rgba(0,191,255,0.35); }
-.card-hub .card-title, .card-portal .card-title, .card-tool .card-title { color:#ffffff; }
-.card-ext .card-title { color:#9900ff; }
-.card-hub .card-arrow, .card-portal .card-arrow, .card-tool .card-arrow { color:rgba(255,255,255,0.7); }
-.card-ext .card-arrow { color:#8833CC; }
-.card-hub .card-desc, .card-portal .card-desc, .card-tool .card-desc { color:rgba(255,255,255,0.75); }
-.card-ext .card-desc { color:rgba(80,0,120,0.85); }
+/* card-type colours and .card-alias: defined in spgo-core.css */
 
 /* ============================================================
    SCREEN B4.3 — HOUSE FACING RULER (MAP)
@@ -968,7 +983,7 @@ html, body {
 <div id="screen-FS-login" class="screen active">
   <div class="site-label">FENGSHUI PORTAL</div>
   <div class="logo-wrap">
-    <img src="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png" alt="FS">
+    <img src="https://i.postimg.cc/D0nmzQMq/FS-ii-Shage.png" alt="FS">
     <div style="font-family:'Aleo',serif; font-size:22px; font-weight:400; color:var(--sky); text-align:center; letter-spacing:0.08em; line-height:1.2;">FENGSHUI PORTAL</div>
     <div style="font-family:'Cinzel',serif; font-size:16px; font-weight:400; color:#e0b0ff; text-align:center; letter-spacing:0.25em; line-height:1.5;">風水 Fengshui</div>
   </div>
@@ -1001,7 +1016,7 @@ html, body {
 
 <!-- VERIFYING OVERLAY -->
 <div id="screen-FS-verify" class="screen" style="justify-content:center; align-items:center; background:radial-gradient(ellipse at 50% 30%,rgba(0,191,255,0.12) 0%,transparent 65%),linear-gradient(180deg,#000073 0%,#00004a 100%);">
-  <img src="https://i.postimg.cc/13SDRFLD/FS-i-Manju.png" alt="FS" style="width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(0,191,255,0.6));animation:verifyPulse 1.4s ease-in-out infinite;margin-bottom:28px;">
+  <img src="https://i.postimg.cc/D0nmzQMq/FS-ii-Shage.png" alt="FS" style="width:90px;height:90px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(0,191,255,0.6));animation:verifyPulse 1.4s ease-in-out infinite;margin-bottom:28px;">
   <div class="sp-loading" id="verify-text" style="margin-top:20px;">Loading…</div>
 </div>
 
