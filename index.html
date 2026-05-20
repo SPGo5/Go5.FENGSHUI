@@ -910,6 +910,30 @@ html, body {
 }
 
 
+
+/* ── Chart loading indicator ── */
+.chart-loading {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
+  gap: 14px;
+}
+.chart-loading img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  animation: verifyPulse 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(0,191,255,0.6));
+}
+.chart-loading-text {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(0,191,255,0.6);
+}
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
@@ -1223,7 +1247,11 @@ html, body {
           <button id="ruler-btn-facing-top" onclick="rulerSetOrientation(false)" style="flex:1; max-width:160px; padding:8px; border-radius:8px; font-family:'Cinzel',serif; font-size:10px; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);">🏠 Facing on top</button>
         </div>
         <div class="chart-na" id="ruler-chart-na" style="display:none;">Chart image not yet uploaded — N/A</div>
-        <img id="ruler-chart-img" class="fs-chart-img" src="" alt="Flying Star Chart" style="display:none;" onerror="rulerChartError(this)">
+        <div id="ruler-chart-loading" class="chart-loading">
+      <img src="https://i.postimg.cc/3Rhf57Mq/Finlay-SK-logo-transparent-background.png" alt="Loading">
+      <div class="chart-loading-text">Loading chart…</div>
+    </div>
+    <img id="ruler-chart-img" class="fs-chart-img" src="" alt="Flying Star Chart" style="display:none;" onerror="rulerChartError(this)">
         <div id="ruler-download-wrap" style="display:none; margin-top:10px; text-align:center;">
           <a id="ruler-download-btn" download style="display:inline-block; padding:10px 24px; background:transparent; border:1px solid rgba(200,169,110,0.5); color:#c8a96e; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.12em; border-radius:8px; text-decoration:none; cursor:pointer;">⬇ Download Chart</a>
         </div>
@@ -1303,6 +1331,10 @@ html, body {
     <div style="display:flex; gap:10px; justify-content:center; margin-bottom:14px;">
       <button id="fs-btn-north" onclick="fsSetOrientation(true)" style="flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:rgba(0,191,255,0.2); border:2px solid var(--sky); color:var(--sky); box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);">🧭 North at top</button>
       <button id="fs-btn-facing" onclick="fsSetOrientation(false)" style="flex:1; max-width:180px; padding:10px; border-radius:8px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; background:transparent; border:1px solid rgba(0,191,255,0.3); color:var(--text-mid);">🏠 Facing on top</button>
+    </div>
+    <div id="fs-chart-loading" class="chart-loading">
+      <img src="https://i.postimg.cc/nr5T0JbR/2NW1_1.png" alt="Loading">
+      <div class="chart-loading-text">Loading chart…</div>
     </div>
     <div class="chart-na" id="fs-chart-na" style="display:none;">Chart image not yet uploaded — N/A</div>
     <img id="fs-chart-img" class="fs-chart-img" src="" alt="Flying Star Chart" style="display:none;" onerror="fsChartError(this)">
@@ -1936,19 +1968,19 @@ function fsLookup() {
   // Build filename: e.g. P91N.1.png (period, facingCode, orientation)
   const fc       = normalizeFacing(facing);
   const suffix   = fsNorthOnTop ? '1' : '2';
-  const fileName = parseInt(period) + fc + '.' + suffix + '.PNG';
+  const fileName = parseInt(period) + fc + '.' + suffix + '.png';
 
   // Show loading state
-  img.src = '';
-  img.alt = 'Loading chart…';
-  img.style.display = 'block';
-  img.style.opacity = '0.4';
+  const loadingEl = document.getElementById('fs-chart-loading');
+  if (loadingEl) loadingEl.style.display = 'flex';
+  img.style.display = 'none';
 
   // Fetch via GAS
   const url = GAS_URL + '?action=fsChart&file=' + encodeURIComponent(fileName);
   fetch(url)
     .then(r => r.json())
     .then(res => {
+      if (loadingEl) loadingEl.style.display = 'none';
       if (res.error || !res.data) {
         img.style.display = 'none';
         na.style.display = 'block';
@@ -1958,9 +1990,8 @@ function fsLookup() {
       const dataUrl = 'data:' + res.mime + ';base64,' + res.data;
       img.src = dataUrl;
       img.alt = fileName;
-      img.style.opacity = '1';
+      img.style.display = 'block';
       dlWrap.style.display = 'block';
-      // Download as blob
       document.getElementById('fs-download-btn').onclick = function() {
         const a = document.createElement('a');
         a.href = dataUrl;
@@ -1968,7 +1999,8 @@ function fsLookup() {
         a.click();
       };
     })
-    .catch(err => {
+    .catch(() => {
+      if (loadingEl) loadingEl.style.display = 'none';
       img.style.display = 'none';
       na.style.display = 'block';
       na.textContent = 'Error loading chart. Check connection.';
@@ -2042,16 +2074,17 @@ function loadRulerChart() {
 
   const suffix   = rulerNorthOnTop ? '1' : '2';
   const fc       = normalizeFacing(rulerChartFacing);
-  const fileName = currentPeriodForRuler + fc + '.' + suffix + '.PNG';
+  const fileName = currentPeriodForRuler + fc + '.' + suffix + '.png';
 
-  img.alt = 'Loading chart…';
-  img.style.display  = 'block';
-  img.style.opacity  = '0.4';
+  const rulerLoadingEl = document.getElementById('ruler-chart-loading');
+  if (rulerLoadingEl) rulerLoadingEl.style.display = 'flex';
+  img.style.display = 'none';
 
   const url = GAS_URL + '?action=fsChart&file=' + encodeURIComponent(fileName);
   fetch(url)
     .then(r => r.json())
     .then(res => {
+      if (rulerLoadingEl) rulerLoadingEl.style.display = 'none';
       if (res.error || !res.data) {
         img.style.display = 'none';
         na.style.display  = 'block';
@@ -2059,9 +2092,9 @@ function loadRulerChart() {
         return;
       }
       const dataUrl = 'data:' + res.mime + ';base64,' + res.data;
-      img.src           = dataUrl;
-      img.alt           = fileName;
-      img.style.opacity = '1';
+      img.src              = dataUrl;
+      img.alt              = fileName;
+      img.style.display    = 'block';
       dlWrap.style.display = 'block';
       document.getElementById('ruler-download-btn').onclick = function() {
         const a = document.createElement('a');
@@ -2071,6 +2104,7 @@ function loadRulerChart() {
       };
     })
     .catch(() => {
+      if (rulerLoadingEl) rulerLoadingEl.style.display = 'none';
       img.style.display = 'none';
       na.style.display  = 'block';
       na.textContent    = 'Error loading chart. Check connection.';
