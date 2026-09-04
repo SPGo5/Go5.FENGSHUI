@@ -183,8 +183,6 @@ html, body {
 
 /* CARDS */
 
-/* 
-
 /* INNER SCREEN HEADER */
 
 /* SECTION DIVIDER */
@@ -244,7 +242,18 @@ html, body {
 
 
 /* ── Node-type card colours ── */
-/* card-type colours and 
+
+/* ============================================================
+   SCREEN B4.3 — HOUSE FACING RULER (MAP)
+   ============================================================ */
+#map-container {
+  width: 100%;
+  max-width: 700px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  position: relative;
+}
 #leaflet-map {
   width: 100%;
   height: 400px;
@@ -327,7 +336,7 @@ html, body {
   transition: background 0.15s, border-color 0.15s;
 }
 .map-tool-btn:hover { background: rgba(0,191,255,0.1); border-color: var(--sky); }
-.map-tool-btn
+.map-tool-btn.active { background: rgba(0,191,255,0.15); border-color: var(--sky); }
 .map-tool-btn.danger { border-color: rgba(255,80,80,0.4); color: rgba(255,80,80,0.8); }
 .map-tool-btn.danger:hover { background: rgba(255,80,80,0.1); }
 .map-instr {
@@ -350,7 +359,7 @@ html, body {
   padding: 18px 20px;
   display: none;
 }
-.bearing-result
+.bearing-result.active { display: block; }
 .bearing-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -434,7 +443,7 @@ html, body {
   gap: 12px;
   margin-top: 14px;
 }
-.period-picker
+.period-picker.active { display: flex; }
 .period-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -467,7 +476,7 @@ html, body {
   padding: 16px 18px;
   display: none;
 }
-.magnetic-section
+.magnetic-section.active { display: block; }
 .mag-title {
   font-family: 'Cinzel', serif;
   font-size: 11px;
@@ -535,7 +544,7 @@ html, body {
   border-radius: 8px;
   display: none;
 }
-.mag-result-box
+.mag-result-box.active { display: block; }
 
 /* ============================================================
    B4.4 — FLYING STAR CHART LOOKUP
@@ -546,7 +555,7 @@ html, body {
   margin-top: 16px;
   display: none;
 }
-.fs-result-wrap
+.fs-result-wrap.active { display: block; }
 .fs-chart-img {
   width: 100%;
   border-radius: 12px;
@@ -1223,14 +1232,9 @@ let fsNorthOnTop = true; // default: North at top
   });
 })();
 
-function fsToggleOrientation() {
-  fsNorthOnTop = !fsNorthOnTop;
-  const btn = document.getElementById('fs-orient-btn');
-  btn.textContent = fsNorthOnTop ? '🧭 North at top' : '🏠 Facing on top';
-  fsLookup();
-}
-
-
+// (fsToggleOrientation was dead code referencing a #fs-orient-btn element
+// that no longer exists — the current UI uses fsSetOrientation() with the
+// two-button #fs-btn-north / #fs-btn-facing pair below. Removed.)
 
 
 
@@ -1411,27 +1415,14 @@ function copyBearingResult() {
 }
 
 function toggleMagneticSection() {
-  const sec = document.getElementById('magnetic-section');
-  sec.classList.toggle('active');
-  if (sec.classList.contains('active')) {
-    // Populate period grid
-    const grid = document.getElementById('period-grid-ruler');
-    grid.innerHTML = '';
-    PERIODS.forEach(p => {
-      const btn = document.createElement('button');
-      btn.className = 'period-btn';
-      btn.textContent = 'P' + p.p + ' (' + p.label.match(/\((.+)\)/)[1] + ')';
-      btn.onclick = () => selectPeriodForRuler(p.p, btn);
-      grid.appendChild(btn);
-    });
-  }
-}
-
-function selectPeriodForRuler(period, btn) {
-  currentPeriodForRuler = period;
-  document.querySelectorAll('#period-grid-ruler .period-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  loadRulerChart();
+  // Period selection for this section is handled by the #period-select-ruler
+  // dropdown (see initRulerPeriodDropdown / rulerPeriodSelected below).
+  // This function only needs to expand/collapse the section itself; the
+  // previous version tried to populate a #period-grid-ruler element that
+  // doesn't exist in this UI (it's leftover from an earlier button-grid
+  // design that was replaced by the dropdown), which threw a TypeError
+  // every time this button was clicked.
+  document.getElementById('magnetic-section').classList.toggle('active');
 }
 
 
