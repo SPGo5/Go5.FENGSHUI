@@ -1237,6 +1237,24 @@ function fsToggleOrientation() {
 // ============================================================
 // B4.3 MAP & HOUSE FACING RULER
 // ============================================================
+// State vars below were originally provided by spgo-core.js in the
+// super-portal. They were never re-declared when this portal was split
+// out, so the very first reference (e.g. "if (mapInstance)" in initMap)
+// threw "ReferenceError: mapInstance is not defined" and silently killed
+// the whole ruler feature. Declaring them locally fixes it regardless of
+// whether spgo-core.js loads.
+if (typeof mapInstance === 'undefined')           window.mapInstance           = null;
+if (typeof drawCanvas === 'undefined')            window.drawCanvas            = null;
+if (typeof drawCtx === 'undefined')               window.drawCtx               = null;
+if (typeof drawnLine === 'undefined')             window.drawnLine             = null;
+if (typeof drawMode === 'undefined')              window.drawMode              = false;
+if (typeof isDrawing === 'undefined')             window.isDrawing             = false;
+if (typeof mapStartPt === 'undefined')            window.mapStartPt            = null;
+if (typeof mapCurrentPt === 'undefined')          window.mapCurrentPt          = null;
+if (typeof currentTrueBearing === 'undefined')    window.currentTrueBearing    = null;
+if (typeof currentMapLatLng === 'undefined')      window.currentMapLatLng      = null;
+if (typeof currentPeriodForRuler === 'undefined') window.currentPeriodForRuler = null;
+
 function initMap() {
   if (mapInstance) return; // already initialized
   mapInstance = L.map('leaflet-map', {
