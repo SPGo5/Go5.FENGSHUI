@@ -1624,15 +1624,54 @@ function bearing(lat1, lng1, lat2, lng2) {
 
 
 
-// Map address search using Nominatim
+// Map address search.
+//
+// WHY SEARCH SOMETIMES FAILS / IS SLOW:
+// nominatim.openstreetmap.org is OpenStreetMap's free PUBLIC DEMO server.
+// Its own usage policy (https://operations.osmfoundation.org/policies/nominatim/)
+// caps combined traffic from ALL users of an app at 1 request/second and can
+// temporarily IP-block anyone who exceeds it — this is a known limitation of
+// the free demo service itself, not a bug in this portal.
+//
+// FIX: get a free API key from https://locationiq.com (free tier is generous
+// and Nominatim-compatible — same response format, no other code changes
+// needed) and paste it below. With a key set, search becomes reliable.
+// Leave it blank to keep using the free Nominatim demo as-is.
+const LOCATIONIQ_KEY = ''; // paste your free LocationIQ key here, e.g. 'pk.abc123...'
+
+let _lastSearchAt = 0;
 async function searchAddress() {
   const query = document.getElementById('map-search-input').value.trim();
   if (!query) return;
   if (!mapInstance) initMap();
+
+  // Self-throttle to at most 1 request/second, per Nominatim's usage policy,
+  // in case of rapid repeated clicks (only matters when no API key is set).
+  const now = Date.now();
+  const waitMs = LOCATIONIQ_KEY ? 0 : Math.max(0, 1100 - (now - _lastSearchAt));
+  if (waitMs > 0) {
+    document.getElementById('map-instr-text').textContent = 'Please wait a moment before searching again…';
+    await new Promise(r => setTimeout(r, waitMs));
+  }
+  _lastSearchAt = Date.now();
+
+  const url = LOCATIONIQ_KEY
+    ? `https://us1.locationiq.com/v1/search?key=${LOCATIONIQ_KEY}&format=json&q=${encodeURIComponent(query)}&limit=1`
+    : `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+
   try {
-    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
-      headers: { 'Accept-Language': 'en' }
-    });
+    const resp = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    if (resp.status === 429 || resp.status === 403) {
+      document.getElementById('map-instr-text').textContent =
+        LOCATIONIQ_KEY
+          ? 'Search service rejected the request — check your LocationIQ key/quota.'
+          : 'Free map search is temporarily rate-limited — wait a few seconds and try again, or add a free LocationIQ key for reliable search.';
+      return;
+    }
+    if (!resp.ok) {
+      document.getElementById('map-instr-text').textContent = `Search error (server said ${resp.status}) — try again`;
+      return;
+    }
     const data = await resp.json();
     if (data && data.length > 0) {
       const lat = parseFloat(data[0].lat);
@@ -1644,7 +1683,7 @@ async function searchAddress() {
       document.getElementById('map-instr-text').textContent = 'Address not found — try different keywords';
     }
   } catch (e) {
-    document.getElementById('map-instr-text').textContent = 'Search error — check your connection';
+    document.getElementById('map-instr-text').textContent = 'Search error — check your internet connection';
   }
 }
 
