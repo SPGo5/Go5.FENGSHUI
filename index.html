@@ -1469,6 +1469,20 @@ function initMap() {
   drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); onDrawStart(e.touches[0]); }, {passive: false});
   drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); onDrawMove(e.touches[0]); }, {passive: false});
   drawCanvas.addEventListener('touchend', e => { e.preventDefault(); onDrawEnd(e.touches[0] || e.changedTouches[0]); }, {passive: false});
+
+  // One-time diagnostic: confirm nothing invisible is covering the Draw
+  // Arrow button. Logs automatically, no action needed — just check the
+  // console after opening this screen.
+  setTimeout(() => {
+    const btn = document.getElementById('btn-draw-mode');
+    if (!btn) { console.log('[DrawArrow diagnostic] #btn-draw-mode not found in DOM.'); return; }
+    const r = btn.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const topEl = document.elementFromPoint(cx, cy);
+    const isCovered = topEl !== btn && !btn.contains(topEl);
+    console.log('[DrawArrow diagnostic] button rect:', r, '| element actually on top at its center:', topEl,
+      isCovered ? '⚠️ SOMETHING ELSE IS COVERING THE BUTTON — this is the bug.' : '✓ button itself is on top, clicks should reach it.');
+  }, 300);
 }
 
 function resizeDrawCanvas() {
@@ -1480,6 +1494,7 @@ function resizeDrawCanvas() {
 }
 
 function toggleDrawMode() {
+  console.log('[DrawArrow] handler fired. drawMode was', drawMode, '-> now', !drawMode, '| drawCanvas exists:', !!drawCanvas, '| mapInstance exists:', !!mapInstance);
   drawMode = !drawMode;
   const btn = document.getElementById('btn-draw-mode');
   drawCanvas.style.display = drawMode ? 'block' : 'none';
