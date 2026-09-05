@@ -135,6 +135,33 @@ button:active, a
   --pink: #F3ABB6;
   --purple: #E0B0FF;
   --grey-text: #D0D2CF;
+
+  /* ── Synced from spgo-core.css :root so cards/header/footer render
+     correctly even if https://spgo5.github.io/Go5.SHARED/spgo-core.css
+     is unreachable (this portal is meant to be standalone). ── */
+  --color-hub-bg:        #000073;
+  --color-hub-border:    #00BFFF;
+  --color-hub-glow:      rgba(0,191,255,0.5);
+  --color-portal-bg:     #0CDD08;
+  --color-portal-border: #09AA05;
+  --color-portal-glow:   rgba(12,221,8,0.5);
+  --color-ext-bg:        #E0B0FF;
+  --color-ext-border:    #8833CC;
+  --color-ext-glow:      rgba(136,51,204,0.5);
+  --color-tool-bg:       #00BFFF;
+  --color-tool-border:   #0090CC;
+  --color-tool-glow:     rgba(0,191,255,0.6);
+  --color-screen-bg:     #E8E8FF;
+  --color-screen-border: #4455AA;
+  --color-screen-glow:   rgba(68,85,170,0.45);
+  --font-name1:          'Cinzel', serif;
+  --font-name2:          'Grey Qo', cursive;
+  --color-name2:         #e0b0ff;
+  --font-oracle:         'Corinthia', cursive;
+  --color-ext-name1:     #9900ff;
+  --btn-radius:          10px;
+  --btn-border-linked:   2.5px;
+  --btn-border-default:  1.5px;
 }
 
 html, body {
@@ -589,9 +616,165 @@ html, body {
   color: rgba(0,191,255,0.6);
 }
 
-/* Preview safety net — spgo-core.css controls full .screen styles on live site */
-.screen { display: none; }
+/* ============================================================
+   STANDALONE-PORTAL SAFETY NET
+   ============================================================
+   This portal was split out of the SPGo super-portal to be
+   self-contained. Everything below is copied verbatim from
+   https://spgo5.github.io/Go5.SHARED/spgo-core.css so this portal
+   renders and functions correctly even if that external resource
+   is slow, blocked, or unreachable — which is exactly what was
+   causing the header/back-button/card/footer styling to disappear
+   even though the map (styled entirely locally) still loaded.
+   If spgo-core.css DOES load, these rules match it exactly, so
+   there is no visual difference either way. */
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0 20px 60px;
+  background: radial-gradient(ellipse at 50% 20%, rgba(0,191,255,0.12) 0%, transparent 65%),
+              linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
+  animation: fadeIn 0.35s ease;
+}
 .screen.active { display: flex; }
+
+.inner-header {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 0 16px;
+  margin-bottom: 24px;
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--sky);
+  font-size: 26px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  line-height: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.back-btn-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(0,191,255,0.75);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.site-label {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.4);
+  margin: 32px 0 20px;
+  text-align: center;
+}
+.logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.logo-wrap img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 0 18px rgba(0,191,255,0.5));
+}
+
+.cards {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.card {
+  background: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s, transform 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+  text-decoration: none;
+  color: inherit;
+}
+.card:active { transform: scale(0.97); background: rgba(0,191,255,0.12); border-color: var(--sky); }
+.card.grayed { opacity: 0.35; pointer-events: none; }
+.card.external { cursor: pointer; }
+.card-icon { width: 48px; flex-shrink: 0; text-align: center; }
+.card-icon img { width: 42px; height: 42px; object-fit: contain; display: block; margin: 0 auto; }
+.card-text { flex: 1; }
+.card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--sky);
+  margin-bottom: 3px;
+}
+.card-desc { font-size: 13px; color: rgba(255,255,255,0.5); }
+.card-desc2 { font-size: 12px; color: var(--sky); margin-top: 4px; opacity: 0.7; }
+.card-arrow { color: var(--sky); font-size: 20px; flex-shrink: 0; }
+.card.card-hub    { background: var(--color-hub-bg);    border-color: var(--color-hub-border);    box-shadow: 0 2px 12px var(--color-hub-glow); }
+.card.card-portal { background: var(--color-portal-bg); border-color: var(--color-portal-border); box-shadow: 0 2px 12px var(--color-portal-glow); }
+.card.card-ext    { background: var(--color-ext-bg);    border-color: var(--color-ext-border);    box-shadow: 0 2px 12px var(--color-ext-glow); }
+.card.card-tool   { background: var(--color-tool-bg);   border-color: var(--color-tool-border);   box-shadow: 0 2px 12px var(--color-tool-glow); }
+.card.card-screen { background: var(--color-screen-bg); border-color: var(--color-screen-border); box-shadow: 0 2px 12px var(--color-screen-glow); }
+.card.card-hub    .card-title, .card.card-portal .card-title, .card.card-tool .card-title { color: #ffffff; }
+.card.card-screen .card-title  { color: #000073; }
+.card.card-screen .card-arrow  { color: rgba(0,0,115,0.6); }
+.card.card-screen .card-desc   { color: rgba(0,0,80,0.75); }
+.card.card-ext    .card-title   { color: var(--color-ext-name1); }
+.card.card-hub    .card-arrow, .card.card-portal .card-arrow, .card.card-tool .card-arrow { color: rgba(255,255,255,0.7); }
+.card.card-ext    .card-arrow   { color: var(--color-ext-border); }
+.card.card-hub    .card-desc, .card.card-portal .card-desc, .card.card-tool .card-desc    { color: rgba(255,255,255,0.75); }
+.card.card-ext    .card-desc    { color: rgba(80,0,120,0.85); }
+.card.card-hub    .card-icon img, .card.card-portal .card-icon img, .card.card-tool .card-icon img { filter: brightness(1.1); }
+
+.portal-footer {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  padding: 28px 16px 36px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.footer-credit {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 5px;
+}
+.footer-copy {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.18);
+}
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
